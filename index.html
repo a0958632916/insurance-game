@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保險知識王 - 尾牙大亂鬥</title>
+    
+    <!-- 1. 核心引擎 (React + Tailwind) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 2. 連線大腦 (Firebase) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        body { background-color: #111827; color: white; font-family: "Microsoft JhengHei", sans-serif; overflow-x: hidden; touch-action: manipulation; }
+        .btn-push { transition: transform 0.1s; } .btn-push:active { transform: scale(0.95); }
+        .animate-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        /* QR Code 模擬樣式 */
+        .qr-placeholder { background: white; padding: 10px; border-radius: 10px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ==========================================
+        // ▼▼▼ 題目區 (你可以直接在這裡改字) ▼▼▼
+        // ==========================================
+        const QUESTIONS = [
+            { q: "針對男性與女性容易發生的特定癌症，哪一對「情侶檔」商品可加碼給付 50%？", opts: ["(A) 羅密歐 與 茱麗葉", "(B) 豪康愛(男) 與 好康愛(女)", "(C) 真心安 與 真安安", "(D) 大陸新娘 與 台灣郎"], ans: 1, note: "針對特定性別癌症，第6年後最高額外給付 50%。" },
+            { q: "哪一張美元保單，名字聽起來「健康又賺錢」，且兼顧「癌症(重度)提前給付」？", opts: ["(A) 美愛康盈", "(B) 美利盛讚", "(C) 美滿雙寶", "(D) 美麗人生"], ans: 0, note: "「美愛康盈」利變型 + 癌症提前給付，兼顧財富與健康。" },
+            { q: "針對高齡族群(55-75歲)，只要活到91歲就能領回一半保費的意外險是？", opts: ["(A) 樂享平安", "(B) 頤養天年", "(C) 長命百歲", "(D) 福如東海"], ans: 0, note: "「樂享平安」針對高齡設計，91歲仍生存給付總保費 50%。" },
+            { q: "保險業務員最厲害的超能力是什麼？", opts: ["(A) 隱形", "(B) 任何話題都能聊到保險", "(C) 飛行", "(D) 好腰力"], ans: 1, note: "這就是專業！隨時隨地散播愛的種子！" },
+            { q: "遇到「奧客」的時候，心裡要默念什麼咒語？", opts: ["(A) 加上去！給他死！", "(B) 莫生氣，氣出病來無人替", "(C) 般若波羅蜜", "(D) 急急如律令"], ans: 1, note: "或是默念：「下一位會更好！」保持正能量。" },
+            { q: "宜蘭多雨路滑，騎機車怕犁田。哪張附約是「骨折救星」，連脫臼都賠？", opts: ["(A) 勁勇健", "(B) 新金骨力", "(C) 鐵牛運功散", "(D) 真的好痛"], ans: 1, note: "「新金骨力」針對骨折、脫臼有特別保障，機車族必備。" },
+            { q: "【腦筋急轉彎】一隻公雞坐在屋頂上，請問牠下的蛋會往哪邊掉？", opts: ["(A) 左邊", "(B) 右邊", "(C) 屋頂中間", "(D) 公雞不會下蛋"], ans: 3, note: "經典陷阱題！公雞是不會下蛋的！" },
+            { q: "【腦筋急轉彎】哪一個卡通人物最喜歡幫助別人？", opts: ["(A) 哆啦A夢", "(B) 巧虎", "(C) 佩佩豬", "(D) 麵包超人"], ans: 1, note: "因為「巧虎」救援 (剛好救人)！台語諧音梗！" },
+            { q: "宜蘭人口頭禪，形容東西「很棒、很強」會說？", opts: ["(A) 水啦", "(B) 勁 (K勁)", "(C) 狂", "(D) 頂"], ans: 1, note: "宜蘭人才懂！勁好呷！勁厲害！" },
+            { q: "宜蘭鄉親想把錢省下來養老，哪張防癌險「30年沒理賠」可拿回錢？", opts: ["(A) 滿溢康愛", "(B) 滿手現金", "(C) 溢起去玩", "(D) 康康舞"], ans: 0, note: "「滿溢康愛」沒用到還能拿回來，精打細算首選。" }
+        ];
+
+        function App() {
+            // 狀態變數
+            const [view, setView] = useState('setup'); 
+            const [appId, setAppId] = useState(''); 
+            const [apiKey, setApiKey] = useState(''); 
+            const [projectId, setProjectId] = useState('');
+            
+            const [db, setDb] = useState(null);
+            const [roomCode, setRoomCode] = useState('');
+            const [gameState, setGameState] = useState({});
+            const [myPlayer, setMyPlayer] = useState({ name: '', score: 0 });
+            const [players, setPlayers] = useState([]);
+
+            // 初始化：檢查是否有儲存的設定
+            useEffect(() => {
+                const savedConfig = localStorage.getItem('ins_game_config');
+                if (savedConfig) {
+                    try { initializeFirebase(JSON.parse(savedConfig)); } 
+                    catch(e) { localStorage.removeItem('ins_game_config'); }
+                }
+            }, []);
+
+            const initializeFirebase = (cfg) => {
+                if (!firebase.apps.length) firebase.initializeApp(cfg);
+                setDb(firebase.firestore());
+                setView('role-select');
+            };
+
+            const handleSaveConfig = () => {
+                if(!apiKey || !projectId) return alert("請輸入完整的資料！");
+                const cfg = { apiKey, authDomain: `${projectId}.firebaseapp.com`, projectId };
+                localStorage.setItem('ins_game_config', JSON.stringify(cfg));
+                initializeFirebase(cfg);
+            };
+
+            const clearConfig = () => {
+                if(confirm("確定要重設連結嗎？你需要重新輸入 API Key。")) {
+                    localStorage.removeItem('ins_game_config');
+                    window.location.reload();
+                }
+            };
+
+            // --- 主持人功能 ---
+            const createRoom = async () => {
+                const code = Math.floor(1000 + Math.random() * 9000).toString();
+                setRoomCode(code);
+                // 建立房間
+                await db.collection('rooms').doc(code).set({
+                    step: 'lobby', qIndex: 0, showAnswer: false, 
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                // 監聽房間變數
+                db.collection('rooms').doc(code).onSnapshot(doc => setGameState(doc.data()));
+                // 監聽玩家列表
+                db.collection('rooms').doc(code).collection('players').onSnapshot(snap => {
+                    const list = [];
+                    snap.forEach(d => list.push({id: d.id, ...d.data()}));
+                    setPlayers(list.sort((a,b) => b.score - a.score));
+                });
+                setView('host');
+            };
+
+            const hostAction = async (action) => {
+                const ref = db.collection('rooms').doc(roomCode);
+                if (action === 'start') await ref.update({ step: 'question', qIndex: 0, showAnswer: false });
+                else if (action === 'reveal') await ref.update({ showAnswer: true, step: 'reveal' });
+                else if (action === 'nextQ') {
+                    const nextIdx = gameState.qIndex + 1;
+                    if (nextIdx >= QUESTIONS.length) await ref.update({ step: 'end' });
+                    else await ref.update({ step: 'question', qIndex: nextIdx, showAnswer: false });
+                } else if (action === 'leaderboard') await ref.update({ step: 'leaderboard' });
+            };
+
+            // --- 參賽者功能 ---
+            const joinRoom = async () => {
+                if(!roomCode || !myPlayer.name) return alert("請輸入房間號與暱稱");
+                const roomRef = db.collection('rooms').doc(roomCode);
+                const doc = await roomRef.get();
+                if(!doc.exists) return alert("房間不存在，請確認大螢幕號碼");
+
+                const uid = Math.random().toString(36).substr(2, 9);
+                // 寫入玩家資料
+                await roomRef.collection('players').doc(uid).set({ name: myPlayer.name, score: 0, lastQ: -1 });
+                setMyPlayer({...myPlayer, uid});
+
+                // 監聽
+                roomRef.onSnapshot(doc => setGameState(doc.data()));
+                roomRef.collection('players').doc(uid).onSnapshot(doc => { if(doc.exists) setMyPlayer(p => ({...p, ...doc.data()})); });
+                setView('player');
+            };
+
+            const playerAnswer = async (optIndex) => {
+                if (gameState.step !== 'question' || gameState.qIndex === myPlayer.lastQ) return;
+                
+                // 簡單計分：答對 +100
+                const points = optIndex === QUESTIONS[gameState.qIndex].ans ? 100 : 0;
+                
+                const roomRef = db.collection('rooms').doc(roomCode);
+                await roomRef.collection('players').doc(myPlayer.uid).update({
+                    score: firebase.firestore.FieldValue.increment(points),
+                    lastQ: gameState.qIndex
+                });
+                setMyPlayer(p => ({...p, lastQ: gameState.qIndex}));
+            };
+
+            // ==========================================
+            // ▼▼▼ 畫面渲染區 ▼▼▼
+            // ==========================================
+
+            // 1. 設定畫面 (第一次用才需要)
+            if (view === 'setup') return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center bg-gray-900">
+                    <h1 className="text-4xl font-bold mb-8 text-yellow-400">🔥 尾牙大亂鬥 🔥</h1>
+                    <div className="bg-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl border border-gray-700">
+                        <div className="mb-6">
+                            <h2 className="text-xl font-bold mb-2">最後一步設定</h2>
+                            <p className="text-sm text-gray-400">請輸入剛剛在 Firebase 申請的兩串密碼</p>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-left text-xs text-gray-400 mb-1">Project ID</label>
+                                <input placeholder="例如: weiya-game-2025" className="w-full p-3 bg-gray-700 rounded text-white border border-gray-600 focus:border-yellow-400 outline-none" value={projectId} onChange={e=>setProjectId(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-left text-xs text-gray-400 mb-1">API Key</label>
+                                <input placeholder="例如: AIzaSyD9..." className="w-full p-3 bg-gray-700 rounded text-white border border-gray-600 focus:border-yellow-400 outline-none" value={apiKey} onChange={e=>setApiKey(e.target.value)} />
+                            </div>
+                            <button onClick={handleSaveConfig} className="w-full bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-xl font-bold text-lg shadow-lg btn-push mt-4">
+                                儲存並開始遊戲 🚀
+                            </button>
+                        </div>
+                        <div className="mt-6 text-xs text-gray-500 border-t border-gray-700 pt-4">
+                            * 這些資料只會存在你的電腦裡，請放心使用。
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // 2. 角色選擇 (首頁)
+            if (view === 'role-select') return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-8 bg-gradient-to-b from-gray-900 to-black">
+                    <h1 className="text-5xl font-black mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500 drop-shadow-lg">
+                        保險知識王
+                    </h1>
+                    
+                    <div className="flex flex-col md:flex-row gap-6 w-full max-w-4xl justify-center">
+                        {/* 主持人按鈕 */}
+                        <button onClick={createRoom} className="group relative bg-purple-600 hover:bg-purple-500 w-full md:w-64 h-48 rounded-3xl text-2xl font-bold btn-push overflow-hidden shadow-[0_0_30px_rgba(147,51,234,0.3)]">
+                            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition"></div>
+                            <div className="relative z-10 flex flex-col items-center gap-2">
+                                <span className="text-4xl">📺</span>
+                                <span>我是主持人</span>
+                                <span className="text-sm font-normal opacity-80">(大螢幕端)</span>
+                            </div>
+                        </button>
+
+                        {/* 參賽者區塊 */}
+                        <div className="bg-gray-800 w-full md:w-80 h-auto p-6 rounded-3xl flex flex-col justify-center space-y-3 border border-gray-700 shadow-2xl">
+                            <div className="text-center font-bold text-xl mb-2 flex items-center justify-center gap-2">
+                                <span>📱</span> 我是參賽者
+                            </div>
+                            <input placeholder="輸入房間號 (看大螢幕)" className="w-full p-3 bg-gray-700 rounded-xl text-center text-lg focus:ring-2 ring-green-500 outline-none" value={roomCode} onChange={e=>setRoomCode(e.target.value)} />
+                            <input placeholder="輸入你的暱稱" className="w-full p-3 bg-gray-700 rounded-xl text-center text-lg focus:ring-2 ring-green-500 outline-none" value={myPlayer.name} onChange={e=>setMyPlayer({...myPlayer, name: e.target.value})} />
+                            <button onClick={joinRoom} className="bg-green-600 hover:bg-green-500 w-full p-3 rounded-xl font-bold text-xl shadow-lg btn-push mt-2">
+                                加入戰局
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button onClick={clearConfig} className="text-gray-600 underline text-xs mt-12 hover:text-gray-400">
+                        [重設資料庫連結]
+                    </button>
+                </div>
+            );
+
+            // 3. 主持人畫面 (大螢幕)
+            if (view === 'host') return (
+                <div className="min-h-screen flex flex-col bg-gray-900 text-white">
+                    {/* 頂部資訊列 */}
+                    <div className="p-4 bg-gray-800 flex justify-between items-center shadow-md z-10">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-yellow-500 text-black px-4 py-2 rounded-lg font-mono font-bold text-2xl shadow-lg">
+                                房間：{roomCode}
+                            </div>
+                        </div>
+                        <div className="text-2xl font-bold">
+                            線上人數：<span className="text-green-400">{players.length}</span> 人
+                        </div>
+                    </div>
+
+                    {/* 遊戲主畫面 */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-y-auto">
+                        
+                        {/* 等待室 */}
+                        {gameState.step === 'lobby' && (
+                            <div className="animate-pop w-full max-w-4xl">
+                                <h2 className="text-5xl font-black mb-8">請拿出手機輸入房間號</h2>
+                                <div className="text-[10rem] font-mono font-black text-yellow-400 leading-none mb-12 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]">
+                                    {roomCode}
+                                </div>
+                                <div className="bg-gray-800/50 p-6 rounded-2xl mb-8 min-h-[100px] border border-gray-700">
+                                    <div className="text-gray-400 mb-4 text-sm">已加入的戰士：</div>
+                                    <div className="flex flex-wrap gap-3 justify-center">
+                                        {players.map(p => (
+                                            <span key={p.id} className="bg-blue-600 px-4 py-2 rounded-full text-lg font-bold shadow-md animate-pop">
+                                                {p.name}
+                                            </span>
+                                        ))}
+                                        {players.length === 0 && <span className="text-gray-600 italic">等待連線中...</span>}
+                                    </div>
+                                </div>
+                                <button onClick={() => hostAction('start')} className="bg-green-600 hover:bg-green-500 px-16 py-6 rounded-full text-4xl font-bold shadow-[0_10px_30px_rgba(22,163,74,0.5)] btn-push border-b-4 border-green-800">
+                                    開始遊戲 🚀
+                                </button>
+                            </div>
+                        )}
+
+                        {/* 題目顯示 */}
+                        {(gameState.step === 'question' || gameState.step === 'reveal') && (
+                            <div className="w-full max-w-6xl animate-pop">
+                                <div className="text-xl text-gray-400 mb-4 font-bold tracking-widest uppercase">Question {gameState.qIndex + 1}</div>
+                                <h2 className="text-4xl md:text-6xl font-black mb-12 leading-tight drop-shadow-lg">
+                                    {QUESTIONS[gameState.qIndex].q}
+                                </h2>
+                                <div className="grid grid-cols-2 gap-6">
+                                    {QUESTIONS[gameState.qIndex].opts.map((opt, idx) => (
+                                        <div key={idx} className={`p-8 text-3xl font-bold rounded-2xl text-left border-4 transition-all duration-300 ${
+                                            gameState.showAnswer 
+                                                ? (idx === QUESTIONS[gameState.qIndex].ans 
+                                                    ? 'bg-green-900 border-green-500 scale-105 shadow-[0_0_40px_rgba(34,197,94,0.5)]' 
+                                                    : 'bg-gray-800 border-transparent opacity-30 grayscale')
+                                                : 'bg-gray-800 border-gray-700 hover:border-gray-500'
+                                        }`}>
+                                            {opt}
+                                        </div>
+                                    ))}
+                                </div>
+                                {gameState.showAnswer && (
+                                    <div className="mt-8 animate-pop">
+                                        <div className="inline-block bg-yellow-600/20 border border-yellow-500 text-yellow-300 text-3xl font-bold px-8 py-4 rounded-xl">
+                                            💡 解析：{QUESTIONS[gameState.qIndex].note}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* 排行榜 */}
+                        {gameState.step === 'leaderboard' && (
+                            <div className="w-full max-w-3xl animate-pop">
+                                <h2 className="text-5xl font-black mb-8 text-yellow-400 drop-shadow-lg">🏆 目前戰況 🏆</h2>
+                                <div className="space-y-4">
+                                    {players.slice(0, 5).map((p, idx) => (
+                                        <div key={p.id} className={`flex justify-between items-center p-6 rounded-2xl text-3xl font-bold border-2 shadow-xl ${
+                                            idx === 0 ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black border-yellow-300 scale-110' : 'bg-gray-800 border-gray-700'
+                                        }`}>
+                                            <div className="flex gap-6 items-center">
+                                                <span className={`w-12 h-12 flex items-center justify-center rounded-full ${idx===0 ? 'bg-white text-yellow-600' : 'bg-gray-700 text-gray-400'}`}>
+                                                    {idx+1}
+                                                </span>
+                                                <span>{p.name}</span>
+                                            </div>
+                                            <div className="font-mono">{p.score}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 結束畫面 */}
+                        {gameState.step === 'end' && (
+                            <div className="animate-pop">
+                                <div className="text-9xl mb-8 animate-bounce">👑</div>
+                                <h1 className="text-7xl font-black text-yellow-400 mb-8 drop-shadow-lg">最終冠軍</h1>
+                                <div className="text-6xl font-bold mb-12">{players[0]?.name}</div>
+                                <div className="text-4xl text-gray-400">得分：{players[0]?.score}</div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 底部控制列 */}
+                    {gameState.step !== 'lobby' && gameState.step !== 'end' && (
+                        <div className="p-6 bg-gray-800 flex justify-center gap-6 border-t border-gray-700">
+                            {gameState.step === 'question' && <button onClick={() => hostAction('reveal')} className="bg-yellow-600 hover:bg-yellow-500 px-10 py-4 rounded-xl font-bold text-2xl shadow-lg btn-push">公佈答案</button>}
+                            {gameState.step === 'reveal' && <button onClick={() => hostAction('leaderboard')} className="bg-blue-600 hover:bg-blue-500 px-10 py-4 rounded-xl font-bold text-2xl shadow-lg btn-push">看排行</button>}
+                            {gameState.step === 'leaderboard' && <button onClick={() => hostAction('nextQ')} className="bg-green-600 hover:bg-green-500 px-10 py-4 rounded-xl font-bold text-2xl shadow-lg btn-push">下一題 ➜</button>}
+                        </div>
+                    )}
+                </div>
+            );
+
+            // 4. 參賽者畫面 (手機)
+            if (view === 'player') return (
+                <div className="min-h-screen bg-gray-900 flex flex-col p-4">
+                    <div className="flex justify-between items-center mb-6 bg-gray-800 p-3 rounded-xl shadow-md">
+                        <div className="font-bold text-xl truncate max-w-[150px]">{myPlayer.name}</div>
+                        <div className="bg-gray-700 px-4 py-2 rounded-lg font-mono font-bold text-yellow-400">Score: {myPlayer.score}</div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col justify-center text-center">
+                        
+                        {gameState.step === 'lobby' && (
+                            <div className="animate-pulse flex flex-col items-center">
+                                <div className="text-8xl mb-6">⏳</div>
+                                <h2 className="text-3xl font-bold mb-2">已連線成功</h2>
+                                <p className="text-gray-400">請看大螢幕，等待開始...</p>
+                            </div>
+                        )}
+
+                        {gameState.step === 'question' && gameState.qIndex !== myPlayer.lastQ && (
+                            <div className="grid grid-cols-2 gap-4 h-full max-h-[600px]">
+                                {['A', 'B', 'C', 'D'].map((label, idx) => (
+                                    <button key={idx} onClick={() => playerAnswer(idx)} className={`rounded-3xl text-7xl font-black text-white shadow-xl btn-push flex items-center justify-center border-b-8 active:border-b-0 active:translate-y-2 transition-all ${
+                                        ['bg-red-500 border-red-800', 'bg-blue-500 border-blue-800', 'bg-yellow-500 border-yellow-800', 'bg-green-500 border-green-800'][idx]
+                                    }`}>
+                                        {label}
+                                    </button>
+                                ))}
+                                <p className="col-span-2 text-gray-500 mt-4 font-bold text-lg animate-pulse">請看大螢幕題目作答</p>
+                            </div>
+                        )}
+
+                        {gameState.step === 'question' && gameState.qIndex === myPlayer.lastQ && (
+                            <div className="animate-pop">
+                                <div className="text-8xl mb-6 animate-bounce">🚀</div>
+                                <h2 className="text-4xl font-black text-green-400">答案已送出</h2>
+                                <p className="text-gray-400 mt-4">等待結果...</p>
+                            </div>
+                        )}
+
+                        {(gameState.step === 'reveal' || gameState.step === 'leaderboard') && (
+                            <div className="bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-700">
+                                <h2 className="text-3xl font-bold mb-4">本題結束</h2>
+                                <p className="text-gray-400 text-lg">正確答案請看大螢幕</p>
+                            </div>
+                        )}
+                        
+                        {gameState.step === 'end' && (
+                            <div className="animate-pop">
+                                <h2 className="text-3xl font-bold mb-6">最終得分</h2>
+                                <div className="text-8xl font-mono font-black text-yellow-400 mb-8">{myPlayer.score}</div>
+                                <div className="text-gray-400">感謝參與！</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
