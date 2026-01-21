@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>保險知識王 - 尾牙大亂鬥</title>
     
-    <!-- 1. 核心引擎 (React + Tailwind) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- 2. 連線大腦 (Firebase) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -20,8 +17,6 @@
         .btn-push { transition: transform 0.1s; } .btn-push:active { transform: scale(0.95); }
         .animate-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        /* QR Code 模擬樣式 */
-        .qr-placeholder { background: white; padding: 10px; border-radius: 10px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -31,7 +26,15 @@
         const { useState, useEffect, useRef } = React;
 
         // ==========================================
-        // ▼▼▼ 題目區 (你可以直接在這裡改字) ▼▼▼
+        // ✅ 設定已完成！金鑰已自動填入
+        // ==========================================
+        const FIREBASE_CONFIG = {
+            projectId: "cathaylife-e0714", 
+            apiKey: "AIzaSyDoeEnc5-cebY6RfWAYnGM5y1BwLHFG5_g"    
+        };
+
+        // ==========================================
+        // ▼▼▼ 題目區 (可隨時回來修改文字) ▼▼▼
         // ==========================================
         const QUESTIONS = [
             { q: "針對男性與女性容易發生的特定癌症，哪一對「情侶檔」商品可加碼給付 50%？", opts: ["(A) 羅密歐 與 茱麗葉", "(B) 豪康愛(男) 與 好康愛(女)", "(C) 真心安 與 真安安", "(D) 大陸新娘 與 台灣郎"], ans: 1, note: "針對特定性別癌症，第6年後最高額外給付 50%。" },
@@ -47,11 +50,8 @@
         ];
 
         function App() {
-            // 狀態變數
-            const [view, setView] = useState('setup'); 
-            const [appId, setAppId] = useState(''); 
-            const [apiKey, setApiKey] = useState(''); 
-            const [projectId, setProjectId] = useState('');
+            // 直接跳過 setup，預設進入 role-select
+            const [view, setView] = useState('role-select'); 
             
             const [db, setDb] = useState(null);
             const [roomCode, setRoomCode] = useState('');
@@ -59,47 +59,35 @@
             const [myPlayer, setMyPlayer] = useState({ name: '', score: 0 });
             const [players, setPlayers] = useState([]);
 
-            // 初始化：檢查是否有儲存的設定
+            // 初始化 Firebase (自動執行)
             useEffect(() => {
-                const savedConfig = localStorage.getItem('ins_game_config');
-                if (savedConfig) {
-                    try { initializeFirebase(JSON.parse(savedConfig)); } 
-                    catch(e) { localStorage.removeItem('ins_game_config'); }
+                if (!firebase.apps.length) {
+                    try {
+                        firebase.initializeApp({
+                            apiKey: FIREBASE_CONFIG.apiKey,
+                            authDomain: `${FIREBASE_CONFIG.projectId}.firebaseapp.com`,
+                            projectId: FIREBASE_CONFIG.projectId
+                        });
+                        setDb(firebase.firestore());
+                    } catch (error) {
+                        alert("Firebase 設定有誤，請檢查程式碼中的 API Key 和 Project ID");
+                        console.error(error);
+                    }
+                } else {
+                    setDb(firebase.firestore());
                 }
             }, []);
 
-            const initializeFirebase = (cfg) => {
-                if (!firebase.apps.length) firebase.initializeApp(cfg);
-                setDb(firebase.firestore());
-                setView('role-select');
-            };
-
-            const handleSaveConfig = () => {
-                if(!apiKey || !projectId) return alert("請輸入完整的資料！");
-                const cfg = { apiKey, authDomain: `${projectId}.firebaseapp.com`, projectId };
-                localStorage.setItem('ins_game_config', JSON.stringify(cfg));
-                initializeFirebase(cfg);
-            };
-
-            const clearConfig = () => {
-                if(confirm("確定要重設連結嗎？你需要重新輸入 API Key。")) {
-                    localStorage.removeItem('ins_game_config');
-                    window.location.reload();
-                }
-            };
-
             // --- 主持人功能 ---
             const createRoom = async () => {
+                if(!db) return;
                 const code = Math.floor(1000 + Math.random() * 9000).toString();
                 setRoomCode(code);
-                // 建立房間
                 await db.collection('rooms').doc(code).set({
                     step: 'lobby', qIndex: 0, showAnswer: false, 
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                // 監聽房間變數
                 db.collection('rooms').doc(code).onSnapshot(doc => setGameState(doc.data()));
-                // 監聽玩家列表
                 db.collection('rooms').doc(code).collection('players').onSnapshot(snap => {
                     const list = [];
                     snap.forEach(d => list.push({id: d.id, ...d.data()}));
@@ -109,6 +97,7 @@
             };
 
             const hostAction = async (action) => {
+                if(!db) return;
                 const ref = db.collection('rooms').doc(roomCode);
                 if (action === 'start') await ref.update({ step: 'question', qIndex: 0, showAnswer: false });
                 else if (action === 'reveal') await ref.update({ showAnswer: true, step: 'reveal' });
@@ -121,28 +110,31 @@
 
             // --- 參賽者功能 ---
             const joinRoom = async () => {
+                if(!db) return alert("連線尚未準備好，請稍後再試");
                 if(!roomCode || !myPlayer.name) return alert("請輸入房間號與暱稱");
+                
                 const roomRef = db.collection('rooms').doc(roomCode);
-                const doc = await roomRef.get();
-                if(!doc.exists) return alert("房間不存在，請確認大螢幕號碼");
+                
+                try {
+                    const doc = await roomRef.get();
+                    if(!doc.exists) return alert("房間不存在，請確認大螢幕號碼");
 
-                const uid = Math.random().toString(36).substr(2, 9);
-                // 寫入玩家資料
-                await roomRef.collection('players').doc(uid).set({ name: myPlayer.name, score: 0, lastQ: -1 });
-                setMyPlayer({...myPlayer, uid});
+                    const uid = Math.random().toString(36).substr(2, 9);
+                    await roomRef.collection('players').doc(uid).set({ name: myPlayer.name, score: 0, lastQ: -1 });
+                    setMyPlayer({...myPlayer, uid});
 
-                // 監聽
-                roomRef.onSnapshot(doc => setGameState(doc.data()));
-                roomRef.collection('players').doc(uid).onSnapshot(doc => { if(doc.exists) setMyPlayer(p => ({...p, ...doc.data()})); });
-                setView('player');
+                    roomRef.onSnapshot(doc => setGameState(doc.data()));
+                    roomRef.collection('players').doc(uid).onSnapshot(doc => { if(doc.exists) setMyPlayer(p => ({...p, ...doc.data()})); });
+                    setView('player');
+                } catch (e) {
+                    console.error(e);
+                    alert("連線失敗，請檢查 Firebase 後台是否已開啟 Firestore Database (測試模式)");
+                }
             };
 
             const playerAnswer = async (optIndex) => {
                 if (gameState.step !== 'question' || gameState.qIndex === myPlayer.lastQ) return;
-                
-                // 簡單計分：答對 +100
                 const points = optIndex === QUESTIONS[gameState.qIndex].ans ? 100 : 0;
-                
                 const roomRef = db.collection('rooms').doc(roomCode);
                 await roomRef.collection('players').doc(myPlayer.uid).update({
                     score: firebase.firestore.FieldValue.increment(points),
@@ -155,36 +147,7 @@
             // ▼▼▼ 畫面渲染區 ▼▼▼
             // ==========================================
 
-            // 1. 設定畫面 (第一次用才需要)
-            if (view === 'setup') return (
-                <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center bg-gray-900">
-                    <h1 className="text-4xl font-bold mb-8 text-yellow-400">🔥 尾牙大亂鬥 🔥</h1>
-                    <div className="bg-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl border border-gray-700">
-                        <div className="mb-6">
-                            <h2 className="text-xl font-bold mb-2">最後一步設定</h2>
-                            <p className="text-sm text-gray-400">請輸入剛剛在 Firebase 申請的兩串密碼</p>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-left text-xs text-gray-400 mb-1">Project ID</label>
-                                <input placeholder="例如: weiya-game-2025" className="w-full p-3 bg-gray-700 rounded text-white border border-gray-600 focus:border-yellow-400 outline-none" value={projectId} onChange={e=>setProjectId(e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="block text-left text-xs text-gray-400 mb-1">API Key</label>
-                                <input placeholder="例如: AIzaSyD9..." className="w-full p-3 bg-gray-700 rounded text-white border border-gray-600 focus:border-yellow-400 outline-none" value={apiKey} onChange={e=>setApiKey(e.target.value)} />
-                            </div>
-                            <button onClick={handleSaveConfig} className="w-full bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-xl font-bold text-lg shadow-lg btn-push mt-4">
-                                儲存並開始遊戲 🚀
-                            </button>
-                        </div>
-                        <div className="mt-6 text-xs text-gray-500 border-t border-gray-700 pt-4">
-                            * 這些資料只會存在你的電腦裡，請放心使用。
-                        </div>
-                    </div>
-                </div>
-            );
-
-            // 2. 角色選擇 (首頁)
+            // 1. 角色選擇 (首頁) - 現在這是預設畫面
             if (view === 'role-select') return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-8 bg-gradient-to-b from-gray-900 to-black">
                     <h1 className="text-5xl font-black mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500 drop-shadow-lg">
@@ -214,17 +177,12 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <button onClick={clearConfig} className="text-gray-600 underline text-xs mt-12 hover:text-gray-400">
-                        [重設資料庫連結]
-                    </button>
                 </div>
             );
 
-            // 3. 主持人畫面 (大螢幕)
+            // 2. 主持人畫面 (大螢幕)
             if (view === 'host') return (
                 <div className="min-h-screen flex flex-col bg-gray-900 text-white">
-                    {/* 頂部資訊列 */}
                     <div className="p-4 bg-gray-800 flex justify-between items-center shadow-md z-10">
                         <div className="flex items-center gap-4">
                             <div className="bg-yellow-500 text-black px-4 py-2 rounded-lg font-mono font-bold text-2xl shadow-lg">
@@ -236,10 +194,7 @@
                         </div>
                     </div>
 
-                    {/* 遊戲主畫面 */}
                     <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-y-auto">
-                        
-                        {/* 等待室 */}
                         {gameState.step === 'lobby' && (
                             <div className="animate-pop w-full max-w-4xl">
                                 <h2 className="text-5xl font-black mb-8">請拿出手機輸入房間號</h2>
@@ -263,7 +218,6 @@
                             </div>
                         )}
 
-                        {/* 題目顯示 */}
                         {(gameState.step === 'question' || gameState.step === 'reveal') && (
                             <div className="w-full max-w-6xl animate-pop">
                                 <div className="text-xl text-gray-400 mb-4 font-bold tracking-widest uppercase">Question {gameState.qIndex + 1}</div>
@@ -293,7 +247,6 @@
                             </div>
                         )}
 
-                        {/* 排行榜 */}
                         {gameState.step === 'leaderboard' && (
                             <div className="w-full max-w-3xl animate-pop">
                                 <h2 className="text-5xl font-black mb-8 text-yellow-400 drop-shadow-lg">🏆 目前戰況 🏆</h2>
@@ -315,7 +268,6 @@
                             </div>
                         )}
 
-                        {/* 結束畫面 */}
                         {gameState.step === 'end' && (
                             <div className="animate-pop">
                                 <div className="text-9xl mb-8 animate-bounce">👑</div>
@@ -326,7 +278,6 @@
                         )}
                     </div>
 
-                    {/* 底部控制列 */}
                     {gameState.step !== 'lobby' && gameState.step !== 'end' && (
                         <div className="p-6 bg-gray-800 flex justify-center gap-6 border-t border-gray-700">
                             {gameState.step === 'question' && <button onClick={() => hostAction('reveal')} className="bg-yellow-600 hover:bg-yellow-500 px-10 py-4 rounded-xl font-bold text-2xl shadow-lg btn-push">公佈答案</button>}
@@ -337,7 +288,7 @@
                 </div>
             );
 
-            // 4. 參賽者畫面 (手機)
+            // 3. 參賽者畫面 (手機)
             if (view === 'player') return (
                 <div className="min-h-screen bg-gray-900 flex flex-col p-4">
                     <div className="flex justify-between items-center mb-6 bg-gray-800 p-3 rounded-xl shadow-md">
@@ -346,7 +297,6 @@
                     </div>
 
                     <div className="flex-1 flex flex-col justify-center text-center">
-                        
                         {gameState.step === 'lobby' && (
                             <div className="animate-pulse flex flex-col items-center">
                                 <div className="text-8xl mb-6">⏳</div>
