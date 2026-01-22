@@ -153,13 +153,6 @@
 
                 const savedRoom = sessionStorage.getItem('host_room_code');
                 if (savedRoom) setRoomCode(savedRoom);
-                
-                // ✅ Magic Link 邏輯：自動帶入網址參數
-                const urlParams = new URLSearchParams(window.location.search);
-                const codeParam = urlParams.get('code');
-                if (codeParam) {
-                    setRoomCode(codeParam);
-                }
             }, []);
 
             // 🎵 切換主題邏輯
@@ -382,34 +375,50 @@
 
             // DJ 面板 (僅 Host)
             const DjPanel = () => {
+                const [isOpen, setIsOpen] = useState(false);
                 if (view !== 'host') return null;
+                
                 return (
-                    <div className="fixed top-4 right-4 z-50 flex gap-2 flex-wrap justify-end">
-                        <div className="bg-black/80 backdrop-blur-md p-2 rounded-xl flex gap-1 border border-gray-600 max-w-[400px] flex-wrap justify-center shadow-xl overflow-x-auto no-scrollbar">
-                            {Object.keys(SOUND_PACKS).map(key => (
-                                <button 
-                                    key={key}
-                                    onClick={() => changeTheme(key)}
-                                    className={`px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white bg-gray-700/50'}`}
-                                >
-                                    {SOUND_PACKS[key].name}
-                                </button>
-                            ))}
-                            <button onClick={playCheer} className="px-3 py-2 rounded-lg text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 shadow-md ml-1 whitespace-nowrap">👏 歡呼</button>
+                    <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setIsOpen(!isOpen)} 
+                                className={`p-3 rounded-full shadow-lg border-2 transition w-14 h-14 flex items-center justify-center text-2xl ${isOpen ? 'bg-yellow-400 text-black border-yellow-200' : 'bg-gray-800 text-white border-gray-500 hover:bg-gray-700'}`}
+                                title="DJ 音控台"
+                            >
+                                🎵
+                            </button>
+                            <button 
+                                onClick={toggleMute} 
+                                className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-14 h-14 flex items-center justify-center text-2xl"
+                                title={isMuted ? "取消靜音" : "靜音"}
+                            >
+                                {isMuted ? "🔇" : "🔊"}
+                            </button>
                         </div>
-                        <button onClick={toggleMute} className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-14 h-14 flex items-center justify-center shrink-0">
-                            {isMuted ? "🔇" : "🔊"}
-                        </button>
+
+                        {isOpen && (
+                            <div className="bg-black/90 backdrop-blur-md p-3 rounded-xl border border-gray-500 shadow-2xl flex flex-col gap-2 mt-2 animate-pop origin-top-right w-56 max-h-[400px] overflow-y-auto">
+                                <div className="text-gray-400 text-xs font-bold text-center mb-1">選擇音樂風格</div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {Object.keys(SOUND_PACKS).map(key => (
+                                        <button 
+                                            key={key}
+                                            onClick={() => changeTheme(key)}
+                                            className={`px-2 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white bg-gray-700/50'}`}
+                                        >
+                                            {SOUND_PACKS[key].name}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="h-px bg-gray-700 my-1"></div>
+                                <button onClick={playCheer} className="w-full px-3 py-3 rounded-lg text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 shadow-md animate-pulse-fast">
+                                    👏 播放歡呼
+                                </button>
+                            </div>
+                        )}
                     </div>
                 );
-            };
-
-            // ✅ 複製連結功能 (包含 Magic Link)
-            const copyLink = () => {
-                const magicUrl = window.location.href.split('?')[0] + '?code=' + roomCode;
-                navigator.clipboard.writeText(magicUrl).then(() => {
-                    alert("連結已複製！請貼到 LINE 群組:\n" + magicUrl);
-                });
             };
 
             // 1. Role Select
@@ -458,15 +467,8 @@
                     <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-y-auto">
                         {gameState.step === 'lobby' && (
                             <div className="animate-pop w-full max-w-5xl flex flex-col items-center">
-                                {/* 移除 QR Code 區塊，只留文字與按鈕 */}
-                                <h2 className="text-6xl font-black mb-4 text-white text-shadow-strong">請輸入房間號</h2>
+                                <h2 className="text-7xl font-black mb-8 text-white text-shadow-strong">請輸入房間號</h2>
                                 <div className="text-[14rem] font-mono font-black text-yellow-400 leading-none mb-12 text-shadow-strong">{roomCode}</div>
-                                
-                                {/* 複製連結按鈕 */}
-                                <button onClick={copyLink} className="mb-12 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-3xl shadow-lg border-4 border-blue-400 flex items-center gap-3 animate-pulse-fast">
-                                    🔗 複製群組連結 (點我)
-                                </button>
-
                                 <button onClick={() => hostAction('start')} disabled={isProcessing} className={`bg-green-600 hover:bg-green-500 px-24 py-10 rounded-full text-7xl font-black shadow-2xl btn-push text-white border-8 border-white ${isProcessing ? 'btn-disabled' : ''}`}>開始遊戲 🚀</button>
                             </div>
                         )}
