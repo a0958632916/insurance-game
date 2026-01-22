@@ -95,19 +95,69 @@
         const CHEER_SOUND = "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3";
 
         // ==========================================
-        // 2. 題目區
+        // 2. 題目區 (已更新為宜冠通訊處專屬題庫)
         // ==========================================
         const QUESTIONS = [
-            { q: "針對男性與女性容易發生的特定癌症，哪一對「情侶檔」商品可加碼給付 50%？", opts: ["(A) 羅密歐 與 茱麗葉", "(B) 豪康愛(男) 與 好康愛(女)", "(C) 真心安 與 真安安", "(D) 大陸新娘 與 台灣郎"], ans: 1, note: "針對特定性別癌症，第6年後最高額外給付 50%。" },
-            { q: "哪一張美元保單，名字聽起來「健康又賺錢」，且兼顧「癌症(重度)提前給付」？", opts: ["(A) 美愛康盈", "(B) 美利盛讚", "(C) 美滿雙寶", "(D) 美麗人生"], ans: 0, note: "「美愛康盈」利變型 + 癌症提前給付，兼顧財富與健康。" },
-            { q: "針對高齡族群(55-75歲)，只要活到91歲就能領回一半保費的意外險是？", opts: ["(A) 樂享平安", "(B) 頤養天年", "(C) 長命百歲", "(D) 福如東海"], ans: 0, note: "「樂享平安」針對高齡設計，91歲仍生存給付總保費 50%。" },
-            { q: "保險業務員最厲害的超能力是什麼？", opts: ["(A) 隱形", "(B) 任何話題都能聊到保險", "(C) 飛行", "(D) 好腰力"], ans: 1, note: "這就是專業！隨時隨地散播愛的種子！" },
-            { q: "遇到「奧客」的時候，心裡要默念什麼咒語？", opts: ["(A) 加上去！給他死！", "(B) 莫生氣，氣出病來無人替", "(C) 般若波羅蜜", "(D) 急急如律令"], ans: 1, note: "或是默念：「下一位會更好！」保持正能量。" },
-            { q: "宜蘭多雨路滑，騎機車怕犁田。哪張附約是「骨折救星」，連脫臼都賠？", opts: ["(A) 勁勇健", "(B) 新金骨力", "(C) 鐵牛運功散", "(D) 真的好痛"], ans: 1, note: "「新金骨力」針對骨折、脫臼有特別保障，機車族必備。" },
-            { q: "【腦筋急轉彎】一隻公雞坐在屋頂上，請問牠下的蛋會往哪邊掉？", opts: ["(A) 左邊", "(B) 右邊", "(C) 屋頂中間", "(D) 公雞不會下蛋"], ans: 3, note: "經典陷阱題！公雞是不會下蛋的！" },
-            { q: "【腦筋急轉彎】哪一個卡通人物最喜歡幫助別人？", opts: ["(A) 哆啦A夢", "(B) 巧虎", "(C) 佩佩豬", "(D) 麵包超人"], ans: 1, note: "因為「巧虎」救援 (剛好救人)！台語諧音梗！" },
-            { q: "宜蘭人口頭禪，形容東西「很棒、很強」會說？", opts: ["(A) 水啦", "(B) 勁 (K勁)", "(C) 狂", "(D) 頂"], ans: 1, note: "宜蘭人才懂！勁好呷！勁厲害！" },
-            { q: "宜蘭鄉親想把錢省下來養老，哪張防癌險「30年沒理賠」可拿回錢？", opts: ["(A) 滿溢康愛", "(B) 滿手現金", "(C) 溢起去玩", "(D) 康康舞"], ans: 0, note: "「滿溢康愛」沒用到還能拿回來，精打細算首選。" }
+            { 
+                q: "現代人手機滑不停，眼睛容易壞掉。哪張附約專門保護「靈魂之窗」，而且搭配 FitBack 最高折 3%？", 
+                opts: ["(A) 睛彩人生 PLUS", "(B) 精彩大結局", "(C) 目光如豆", "(D) 睜一隻眼閉一隻眼"], 
+                ans: 0, 
+                note: "「睛彩人生 PLUS」是您的護眼首選！" 
+            },
+            { 
+                q: "哪張美元保單是「重症患者的救星」？若不幸罹患重度癌症，身故保險金可以「提前」拿來治病！", 
+                opts: ["(A) 美夢成真", "(B) 美愛康盈", "(C) 美麗誤會", "(D) 美利堅合眾國"], 
+                ans: 1, 
+                note: "「美愛康盈」提供重度癌症提前給付，治療更安心！" 
+            },
+            { 
+                q: "宜蘭冬天濕冷，老人家最怕跌倒。哪張意外險活到 91 歲還會包一個「保費 50%」的大紅包給你？", 
+                opts: ["(A) 樂享平安", "(B) 老當益壯", "(C) 長命百歲", "(D) 樂不思蜀"], 
+                ans: 0, 
+                note: "「樂享平安」守護高齡長輩，活得久領得多！" 
+            },
+            { 
+                q: "【腦筋急轉彎】什麼東西「早上四條腿，中午兩條腿，晚上三條腿」，而且越早買越便宜？", 
+                opts: ["(A) 怪物", "(B) 椅子", "(C) 人 (買保險)", "(D) 蜈蚣"], 
+                ans: 2, 
+                note: "人的一生生老病死，保險越早買越便宜喔！" 
+            },
+            { 
+                q: "癌症治療費用貴森森，哪張防癌險把超先進的「質子、重粒子」治療都包進去，精準打擊癌細胞？", 
+                opts: ["(A) 精準康愛", "(B) 神槍手康愛", "(C) 瞄準康愛", "(D) 百發百中"], 
+                ans: 0, 
+                note: "「精準康愛」納入質子重粒子治療，抗癌更精準！" 
+            },
+            { 
+                q: "宜蘭雨神同行，機車族最怕打滑「種田」。如果不小心骨折脫臼，哪張附約是我們的「骨科神醫」？", 
+                opts: ["(A) 鐵牛運功散", "(B) 新金骨力", "(C) 真的好痛", "(D) 筋開腰軟"], 
+                ans: 1, 
+                note: "「新金骨力」針對骨折脫臼提供完善保障！" 
+            },
+            { 
+                q: "想要保費有去有回？哪張防癌險主打「無理賠回饋」，健康維持好，滿期把錢 (1.02倍) 還給你？", 
+                opts: ["(A) 滿溢康愛", "(B) 滿漢大餐", "(C) 滿載而歸", "(D) 溢於言表"], 
+                ans: 0, 
+                note: "「滿溢康愛」無理賠回饋機制，健康財富雙贏！" 
+            },
+            { 
+                q: "【業務日常】當客戶說「我考慮一下」的時候，通常代表什麼意思？", 
+                opts: ["(A) 他真的在考慮", "(B) 他想問神明", "(C) 他在等你用「專業」說服他", "(D) 他想回家睡覺"], 
+                ans: 2, 
+                note: "展現你的專業與熱情，成交就在眼前！" 
+            },
+            { 
+                q: "針對「男性」攝護腺癌與「女性」乳癌，哪一對商品在第 6 年後會加碼給付 50%？", 
+                opts: ["(A) 牛郎 與 織女", "(B) 豪康愛 與 好康愛", "(C) 志明 與 春嬌", "(D) 羅密歐 與 茱麗葉"], 
+                ans: 1, 
+                note: "「豪康愛」與「好康愛」給予特定癌症加碼保障！" 
+            },
+            { 
+                q: "【送分題】為什麼宜冠通訊處的夥伴業績都這麼好？", 
+                opts: ["(A) 因為宜蘭風水好", "(B) 因為大家顏值高", "(C) 因為經理帶得好且夥伴夠專業", "(D) 因為客戶都很有錢"], 
+                ans: 2, 
+                note: "宜冠最棒！專業團隊，業績長紅！" 
+            }
         ];
 
         function App() {
@@ -335,7 +385,9 @@
             // --- Player Functions ---
             const joinRoom = async () => {
                 if(!db) return alert("連線中...");
-                if(!roomCode || !myPlayer.name) return alert("請輸入房間號與暱稱");
+                // 強制檢查暱稱
+                if(!roomCode || !myPlayer.name.trim()) return alert("請輸入房間號碼和您的暱稱！");
+                
                 const roomRef = db.collection('rooms').doc(roomCode);
                 try {
                     const doc = await roomRef.get();
@@ -375,48 +427,24 @@
 
             // DJ 面板 (僅 Host)
             const DjPanel = () => {
-                const [isOpen, setIsOpen] = useState(false);
                 if (view !== 'host') return null;
-                
                 return (
-                    <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
-                        <div className="flex gap-2">
-                            <button 
-                                onClick={() => setIsOpen(!isOpen)} 
-                                className={`p-3 rounded-full shadow-lg border-2 transition w-14 h-14 flex items-center justify-center text-2xl ${isOpen ? 'bg-yellow-400 text-black border-yellow-200' : 'bg-gray-800 text-white border-gray-500 hover:bg-gray-700'}`}
-                                title="DJ 音控台"
-                            >
-                                🎵
-                            </button>
-                            <button 
-                                onClick={toggleMute} 
-                                className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-14 h-14 flex items-center justify-center text-2xl"
-                                title={isMuted ? "取消靜音" : "靜音"}
-                            >
-                                {isMuted ? "🔇" : "🔊"}
-                            </button>
-                        </div>
-
-                        {isOpen && (
-                            <div className="bg-black/90 backdrop-blur-md p-3 rounded-xl border border-gray-500 shadow-2xl flex flex-col gap-2 mt-2 animate-pop origin-top-right w-56 max-h-[400px] overflow-y-auto">
-                                <div className="text-gray-400 text-xs font-bold text-center mb-1">選擇音樂風格</div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {Object.keys(SOUND_PACKS).map(key => (
-                                        <button 
-                                            key={key}
-                                            onClick={() => changeTheme(key)}
-                                            className={`px-2 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white bg-gray-700/50'}`}
-                                        >
-                                            {SOUND_PACKS[key].name}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="h-px bg-gray-700 my-1"></div>
-                                <button onClick={playCheer} className="w-full px-3 py-3 rounded-lg text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 shadow-md animate-pulse-fast">
-                                    👏 播放歡呼
+                    <div className="fixed top-4 right-4 z-50 flex gap-2 flex-wrap justify-end">
+                        <div className="bg-black/80 backdrop-blur-md p-2 rounded-xl flex gap-1 border border-gray-600 max-w-[400px] flex-wrap justify-center shadow-xl overflow-x-auto no-scrollbar">
+                            {Object.keys(SOUND_PACKS).map(key => (
+                                <button 
+                                    key={key}
+                                    onClick={() => changeTheme(key)}
+                                    className={`px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white bg-gray-700/50'}`}
+                                >
+                                    {SOUND_PACKS[key].name}
                                 </button>
-                            </div>
-                        )}
+                            ))}
+                            <button onClick={playCheer} className="px-3 py-2 rounded-lg text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 shadow-md ml-1 whitespace-nowrap">👏 歡呼</button>
+                        </div>
+                        <button onClick={toggleMute} className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-14 h-14 flex items-center justify-center shrink-0">
+                            {isMuted ? "🔇" : "🔊"}
+                        </button>
                     </div>
                 );
             };
@@ -434,7 +462,7 @@
                         <div className="bg-black/40 backdrop-blur-md w-full p-8 rounded-3xl flex flex-col justify-center space-y-6 shadow-2xl border-2 border-yellow-400/50">
                             <div className="text-center font-bold text-4xl mb-2 text-yellow-300 text-shadow-strong">📱 我是參賽者</div>
                             <input placeholder="輸入房間號" className="w-full p-6 bg-white/95 rounded-2xl text-center text-4xl font-bold outline-none text-black border-4 border-blue-500 focus:border-yellow-400 placeholder-gray-500" value={roomCode} onChange={e=>setRoomCode(e.target.value)} type="tel"/>
-                            <input placeholder="輸入你的名字" className="w-full p-6 bg-white/95 rounded-2xl text-center text-4xl font-bold outline-none text-black border-4 border-blue-500 focus:border-yellow-400 placeholder-gray-500" value={myPlayer.name} onChange={e=>setMyPlayer({...myPlayer, name: e.target.value})} />
+                            <input placeholder="輸入暱稱 (不一定要全名)" className="w-full p-6 bg-white/95 rounded-2xl text-center text-4xl font-bold outline-none text-black border-4 border-blue-500 focus:border-yellow-400 placeholder-gray-500" value={myPlayer.name} onChange={e=>setMyPlayer({...myPlayer, name: e.target.value})} />
                             <button onClick={joinRoom} className="bg-green-600 hover:bg-green-500 w-full py-8 rounded-2xl font-black text-5xl text-white shadow-lg btn-push mt-4 border-b-8 border-green-800">加入戰局</button>
                         </div>
                     </div>
