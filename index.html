@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>保險知識王 - 尾牙大亂鬥 (Debug版)</title>
+    <title>保險知識王 - 尾牙大亂鬥</title>
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -18,14 +18,11 @@
             color: #ffffff; 
             font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; 
             overflow-x: hidden; 
-            touch-action: manipulation; /* 禁止手機雙擊縮放 */
+            touch-action: manipulation;
         }
-        /* 按鈕樣式優化 */
         .btn-push { transition: all 0.1s; transform: translateY(0); } 
         .btn-push:active:not(:disabled) { transform: translateY(4px); filter: brightness(90%); }
         .btn-disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: none !important; }
-        
-        /* 動畫 */
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .animate-pulse-fast { animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -74,9 +71,10 @@
             const [gameState, setGameState] = useState({});
             const [myPlayer, setMyPlayer] = useState({ name: '', score: 0 });
             const [players, setPlayers] = useState([]);
-            const [isProcessing, setIsProcessing] = useState(false); // 🔒 核心鎖：防止連點
+            const [isProcessing, setIsProcessing] = useState(false);
             const [timer, setTimer] = useState(15); 
-            
+            const revealedRef = useRef(false);
+
             const [isMuted, setIsMuted] = useState(false);
             const audioRef = useRef({
                 lobby: new Audio(SOUNDS.lobby),
@@ -85,7 +83,6 @@
                 victory: new Audio(SOUNDS.victory)
             });
 
-            // 初始化
             useEffect(() => {
                 audioRef.current.lobby.loop = true;
                 audioRef.current.lobby.volume = 0.4;
@@ -103,45 +100,20 @@
                     } catch (error) { alert("連線錯誤"); }
                 } else { setDb(firebase.firestore()); }
 
-                // 自動重連
                 const savedRoom = sessionStorage.getItem('host_room_code');
                 if (savedRoom) setRoomCode(savedRoom);
             }, []);
 
-            // ⏱️ 倒數計時 (嚴格版)
+            // 🎵 音樂邏輯 (嚴格限制：非 Host 絕對不播)
             useEffect(() => {
-                let interval;
-                // 只有在 Host 且 題目階段 且 沒在處理中 才倒數
-                if (view === 'host' && gameState.step === 'question' && timer > 0 && !isProcessing) {
-                    interval = setInterval(() => setTimer(t => t - 1), 1000);
-                } else if (view === 'host' && gameState.step === 'question' && timer === 0 && !isProcessing) {
-                    // 時間到，自動觸發 Reveal
-                    hostAction('reveal');
-                }
-                return () => clearInterval(interval);
-            }, [view, gameState.step, timer, isProcessing]);
-
-            // ⚡ 全員作答自動公佈 (防衝突版)
-            useEffect(() => {
-                if (view === 'host' && gameState.step === 'question' && players.length > 0 && !isProcessing) {
-                    const answeredCount = players.filter(p => p.lastQ === gameState.qIndex).length;
-                    
-                    // 必須大於0人，且等於總人數
-                    if (answeredCount === players.length && answeredCount > 0) {
-                        console.log("全員作答完畢，自動公佈");
-                        // 延遲一點點，避免跟最後一個人的寫入衝突
-                        setTimeout(() => hostAction('reveal'), 800);
-                    }
-                }
-            }, [players, gameState, view, isProcessing]);
-
-            // 音樂邏輯
-            useEffect(() => {
+                // 如果是成員 (view !== 'host')，強制暫停所有音樂
                 if (isMuted || view !== 'host') {
                     audioRef.current.lobby.pause();
                     audioRef.current.game.pause();
                     return;
                 }
+                
+                // 以下只有主持人會執行
                 audioRef.current.lobby.pause();
                 audioRef.current.game.pause();
 
@@ -150,12 +122,16 @@
             }, [gameState.step, view, isMuted]);
 
             const playSound = (type) => {
+                // 雙重檢查：非 Host 不准播
                 if (isMuted || view !== 'host') return;
                 const sound = audioRef.current[type];
                 if (sound) { sound.currentTime = 0; sound.play().catch(e => {}); }
             };
 
             const toggleMute = () => {
+                // 再次檢查：非 Host 不准操作
+                if (view !== 'host') return;
+
                 if (isMuted) {
                     setIsMuted(false);
                     if (gameState.step === 'lobby') audioRef.current.lobby.play().catch(e=>{});
@@ -166,6 +142,35 @@
                     audioRef.current.game.pause();
                 }
             };
+
+            // 重置計時器
+            useEffect(() => {
+                if (gameState.step === 'question') {
+                    setTimer(15);
+                    revealedRef.current = false;
+                }
+            }, [gameState.qIndex, gameState.step]);
+
+            // 計時與自動公佈
+            useEffect(() => {
+                let interval;
+                if (view === 'host' && gameState.step === 'question' && !revealedRef.current) {
+                    if (timer > 0) {
+                        interval = setInterval(() => setTimer(t => t - 1), 1000);
+                    } else if (timer === 0 && !isProcessing) {
+                        revealedRef.current = true;
+                        hostAction('reveal');
+                    }
+                    if (players.length > 0) {
+                        const answeredCount = players.filter(p => p.lastQ === gameState.qIndex).length;
+                        if (answeredCount === players.length && answeredCount > 0 && !isProcessing) {
+                            revealedRef.current = true;
+                            setTimeout(() => hostAction('reveal'), 800);
+                        }
+                    }
+                }
+                return () => clearInterval(interval);
+            }, [view, gameState.step, timer, players, isProcessing]);
 
             const sortPlayers = (list) => {
                 return list.sort((a, b) => {
@@ -210,16 +215,13 @@
                 setView('host');
             };
 
-            // 核心控制函數 (含鎖定機制)
             const hostAction = async (action) => {
-                // 🔒 如果正在處理中，或資料庫沒連上，直接拒絕執行
                 if(!db || isProcessing) return;
                 
-                // 🔒 狀態檢查 (防止重複觸發)
-                if (action === 'reveal' && gameState.step === 'reveal') return; // 已經公佈了就別再公佈
+                if (action === 'reveal' && gameState.step === 'reveal') return;
                 if (action === 'start' && gameState.step === 'question') return;
 
-                setIsProcessing(true); // 上鎖
+                setIsProcessing(true);
 
                 try {
                     const ref = db.collection('rooms').doc(roomCode);
@@ -246,11 +248,10 @@
                     } else if (action === 'leaderboard') {
                         await ref.update({ step: 'leaderboard' });
                     }
-                } catch (e) { 
-                    console.error("Host Action Error:", e); 
-                } finally { 
-                    // 解鎖，給予 0.5 秒緩衝
-                    setTimeout(() => setIsProcessing(false), 500); 
+                } catch (e) {
+                    console.error("Action Failed:", e);
+                } finally {
+                    setTimeout(() => setIsProcessing(false), 1000);
                 }
             };
 
@@ -258,13 +259,16 @@
             const joinRoom = async () => {
                 if(!db) return alert("連線中...");
                 if(!roomCode || !myPlayer.name) return alert("請輸入房間號與暱稱");
+                
                 const roomRef = db.collection('rooms').doc(roomCode);
                 try {
                     const doc = await roomRef.get();
                     if(!doc.exists) return alert("房間不存在");
+                    
                     const uid = Math.random().toString(36).substr(2, 9);
                     await roomRef.collection('players').doc(uid).set({ name: myPlayer.name, score: 0, lastQ: -1 });
                     setMyPlayer({...myPlayer, uid});
+                    
                     roomRef.onSnapshot(doc => setGameState(doc.data()));
                     roomRef.collection('players').doc(uid).onSnapshot(doc => { if(doc.exists) setMyPlayer(p => ({...p, ...doc.data()})); });
                     roomRef.collection('players').onSnapshot(snap => {
@@ -281,29 +285,37 @@
                 const currentQ = QUESTIONS[gameState.qIndex];
                 const isCorrect = optIndex === currentQ.ans;
                 let points = 0;
+
                 if (isCorrect) {
                     const now = Date.now();
                     const start = gameState.startTime || now;
                     const elapsedSec = (now - start) / 1000;
                     points = Math.max(200, Math.round(1000 - (elapsedSec * 30)));
                 }
+                
                 const roomRef = db.collection('rooms').doc(roomCode);
-                await roomRef.collection('players').doc(myPlayer.uid).update({
-                    score: firebase.firestore.FieldValue.increment(points), lastQ: gameState.qIndex
-                });
                 setMyPlayer(p => ({...p, lastQ: gameState.qIndex}));
+                
+                try {
+                    await roomRef.collection('players').doc(myPlayer.uid).update({
+                        score: firebase.firestore.FieldValue.increment(points), lastQ: gameState.qIndex
+                    });
+                } catch(e) { console.error("Answer failed"); }
             };
 
-            const SoundToggle = () => (
-                <button onClick={toggleMute} className="fixed top-4 right-4 z-50 bg-gray-700/80 border-2 border-white/30 text-white p-4 rounded-full shadow-lg backdrop-blur-md transition text-2xl w-16 h-16 flex items-center justify-center">
-                    {isMuted ? "🔇" : "🔊"}
-                </button>
-            );
+            // 🔇 音效按鈕 (只顯示給主持人！)
+            const SoundToggle = () => {
+                if (view !== 'host') return null; // 成員端完全不渲染此按鈕
+                return (
+                    <button onClick={toggleMute} className="fixed top-4 right-4 z-50 bg-gray-700/80 border-2 border-white/30 text-white p-4 rounded-full shadow-lg backdrop-blur-md transition text-2xl w-16 h-16 flex items-center justify-center">
+                        {isMuted ? "🔇" : "🔊"}
+                    </button>
+                );
+            };
 
             // 1. Role Select
             if (view === 'role-select') return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-12">
-                    <SoundToggle />
                     <h1 className="text-6xl md:text-8xl font-black mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500 drop-shadow-lg neon-text tracking-widest leading-tight">保險<br/>知識王</h1>
                     <div className="flex flex-col gap-8 w-full max-w-xl justify-center">
                         <button onClick={initHost} className="bg-purple-700/80 hover:bg-purple-600 w-full py-6 rounded-3xl text-3xl font-bold btn-push shadow-2xl border-2 border-purple-400/50 text-white flex justify-center items-center gap-4 backdrop-blur-sm"><span>📺</span> 我是主持人</button>
@@ -381,9 +393,9 @@
                                 <h1 className="text-8xl font-black text-yellow-400 mb-12 drop-shadow-lg neon-text">最終冠軍</h1>
                                 <div className="text-8xl font-bold mb-16 text-white bg-red-600 py-8 px-16 rounded-3xl inline-block shadow-2xl border-8 border-yellow-400">{players[0]?.name}</div>
                                 <div className="text-6xl text-gray-300">總分：{players[0]?.score}</div>
-                                <div className="mt-12 grid grid-cols-2 gap-4 opacity-80">
+                                <div className="mt-12 grid grid-cols-2 gap-6 opacity-80">
                                     {players.slice(1, 5).map((p, idx) => (
-                                        <div key={p.id} className="bg-gray-800 p-4 rounded-xl text-2xl flex justify-between px-8 border border-gray-600">
+                                        <div key={p.id} className="bg-gray-800 p-6 rounded-2xl text-3xl flex justify-between px-8 border border-gray-600">
                                             <span>#{idx+2} {p.name}</span> <span className="text-yellow-400">{p.score}</span>
                                         </div>
                                     ))}
@@ -392,7 +404,6 @@
                         )}
                     </div>
 
-                    {/* 控制列 (防連點) */}
                     {gameState.step !== 'lobby' && gameState.step !== 'end' && (
                         <div className="p-8 bg-gray-800/90 flex justify-center gap-8 border-t-2 border-gray-600 backdrop-blur-md">
                             {gameState.step === 'question' && <button onClick={() => hostAction('reveal')} disabled={isProcessing} className={`bg-yellow-600 hover:bg-yellow-500 px-12 py-6 rounded-2xl font-bold text-3xl shadow-lg btn-push ${isProcessing ? 'btn-disabled' : ''}`}>強制公佈答案</button>}
