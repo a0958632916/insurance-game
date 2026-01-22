@@ -458,10 +458,11 @@
                     <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-y-auto">
                         {gameState.step === 'lobby' && (
                             <div className="animate-pop w-full max-w-5xl flex flex-col items-center">
-                                <h2 className="text-7xl font-black mb-8 text-white text-shadow-strong">請輸入房間號</h2>
-                                <div className="text-[14rem] font-mono font-black text-yellow-400 leading-none mb-8 text-shadow-strong">{roomCode}</div>
+                                {/* 移除 QR Code 區塊，只留文字與按鈕 */}
+                                <h2 className="text-6xl font-black mb-4 text-white text-shadow-strong">請輸入房間號</h2>
+                                <div className="text-[14rem] font-mono font-black text-yellow-400 leading-none mb-12 text-shadow-strong">{roomCode}</div>
                                 
-                                {/* ✅ 新增複製連結按鈕 */}
+                                {/* 複製連結按鈕 */}
                                 <button onClick={copyLink} className="mb-12 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-3xl shadow-lg border-4 border-blue-400 flex items-center gap-3 animate-pulse-fast">
                                     🔗 複製群組連結 (點我)
                                 </button>
@@ -530,12 +531,38 @@
                         {gameState.step === 'end' && (
                             <div className="animate-pop w-full max-w-6xl flex flex-col items-center">
                                 <h1 className="text-8xl font-black title-gold mb-8">🏆 最終榮譽榜 🏆</h1>
-                                <div className="flex justify-center mb-8 w-full"><div className="bg-gradient-to-b from-yellow-300 to-yellow-600 p-2 rounded-[3rem] shadow-2xl transform scale-110 z-20"><div className="bg-red-700 rounded-[2.5rem] p-10 text-center border-4 border-yellow-200 min-w-[500px]"><div className="text-[7rem] mb-4 drop-shadow-lg">👑</div><div className="text-7xl font-black text-white mb-4 text-shadow-strong">{players[0]?.name}</div><div className="text-6xl font-mono text-yellow-200 font-bold">{players[0]?.score}</div></div></div></div>
-                                <div className="flex justify-center gap-12 mb-10 w-full px-8">
-                                    {players.slice(1, 3).map((p, idx) => (<div key={p.id} className={`flex-1 p-8 rounded-3xl text-center border-4 shadow-xl relative top-0 ${idx===0 ? 'bg-gray-200 border-gray-400' : 'bg-orange-200 border-orange-400'}`}><div className="text-6xl mb-4">{idx===0 ? '🥈' : '🥉'}</div><div className="text-5xl font-bold text-slate-800 mb-2">{p.name}</div><div className="text-5xl font-mono font-bold text-slate-900">{p.score}</div></div>))}
+                                
+                                {/* 冠軍 */}
+                                <div className="flex justify-center mb-8 w-full">
+                                    <div className="bg-gradient-to-b from-yellow-300 to-yellow-600 p-2 rounded-[3rem] shadow-2xl transform scale-110 z-20">
+                                        <div className="bg-red-700 rounded-[2.5rem] p-10 text-center border-4 border-yellow-200 min-w-[500px]">
+                                            <div className="text-[7rem] mb-4 drop-shadow-lg">👑</div>
+                                            <div className="text-7xl font-black text-white mb-4 text-shadow-strong">{players[0]?.name}</div>
+                                            <div className="text-6xl font-mono text-yellow-200 font-bold">{players[0]?.score}</div>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                {/* 亞軍季軍 */}
+                                <div className="flex justify-center gap-12 mb-10 w-full px-8">
+                                    {players.slice(1, 3).map((p, idx) => (
+                                        <div key={p.id} className={`flex-1 p-8 rounded-3xl text-center border-4 shadow-xl relative top-0 ${idx===0 ? 'bg-gray-200 border-gray-400' : 'bg-orange-200 border-orange-400'}`}>
+                                            <div className="text-6xl mb-4">{idx===0 ? '🥈' : '🥉'}</div>
+                                            <div className="text-5xl font-bold text-slate-800 mb-2">{p.name}</div>
+                                            <div className="text-5xl font-mono font-bold text-slate-900">{p.score}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* 第 4, 5, 6 名 */}
                                 <div className="grid grid-cols-3 gap-6 w-full px-4">
-                                    {players.slice(3, 6).map((p, idx) => (<div key={p.id} className="bg-white/95 p-6 rounded-2xl flex flex-col items-center justify-center border-4 border-blue-400 shadow-md"><div className="text-4xl font-bold text-slate-400 mb-2">#{idx+4}</div><div className="text-4xl font-bold text-blue-900 truncate w-full text-center">{p.name}</div><div className="text-3xl font-mono text-blue-600 mt-2">{p.score}</div></div>))}
+                                    {players.slice(3, 6).map((p, idx) => (
+                                        <div key={p.id} className="bg-white/95 p-6 rounded-2xl flex flex-col items-center justify-center border-4 border-blue-400 shadow-md">
+                                            <div className="text-4xl font-bold text-slate-400 mb-2">#{idx+4}</div>
+                                            <div className="text-4xl font-bold text-blue-900 truncate w-full text-center">{p.name}</div>
+                                            <div className="text-3xl font-mono text-blue-600 mt-2">{p.score}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -567,17 +594,46 @@
                     </div>
 
                     <div className="flex-1 flex flex-col justify-center text-center">
-                        {gameState.step === 'lobby' && <div className="animate-pulse flex flex-col items-center"><div className="text-9xl mb-8">⏳</div><h2 className="text-6xl font-black mb-4 text-white">連線成功！</h2><p className="text-blue-200 text-3xl">請看大螢幕，等待開始...</p></div>}
+                        {gameState.step === 'lobby' && (
+                            <div className="animate-pulse flex flex-col items-center">
+                                <div className="text-9xl mb-8">⏳</div>
+                                <h2 className="text-6xl font-black mb-4 text-white">連線成功！</h2>
+                                <p className="text-blue-200 text-3xl">請看大螢幕，等待開始...</p>
+                            </div>
+                        )}
+                        
                         {gameState.step === 'question' && gameState.qIndex !== myPlayer.lastQ && (
                             <div className="grid-btn-container">
                                 {['A', 'B', 'C', 'D'].map((label, idx) => (
-                                    <button key={idx} onClick={() => playerAnswer(idx)} className={`rounded-3xl text-9xl font-black text-white shadow-xl btn-push flex items-center justify-center border-b-[16px] active:border-b-0 active:translate-y-4 transition-all ${['bg-red-600 border-red-900', 'bg-blue-600 border-blue-900', 'bg-yellow-500 border-yellow-800', 'bg-green-600 border-green-900'][idx]}`}>{label}</button>
+                                    <button key={idx} onClick={() => playerAnswer(idx)} className={`rounded-3xl text-9xl font-black text-white shadow-xl btn-push flex items-center justify-center border-b-[16px] active:border-b-0 active:translate-y-4 transition-all ${['bg-red-600 border-red-900', 'bg-blue-600 border-blue-900', 'bg-yellow-500 border-yellow-800', 'bg-green-600 border-green-900'][idx]}`}>
+                                        {label}
+                                    </button>
                                 ))}
                             </div>
                         )}
-                        {gameState.step === 'question' && gameState.qIndex === myPlayer.lastQ && <div className="animate-pop"><div className="text-9xl mb-8 animate-bounce">🚀</div><h2 className="text-6xl font-black text-green-400 mb-4">答案已送出</h2><p className="text-white text-4xl">請看大螢幕結果</p></div>}
-                        {(gameState.step === 'reveal' || gameState.step === 'leaderboard') && <div className="bg-white p-10 rounded-3xl shadow-2xl border-8 border-blue-500"><h2 className="text-6xl font-black mb-6 text-blue-900">本題結束</h2><p className="text-gray-600 text-4xl font-bold">正確答案請看大螢幕</p></div>}
-                        {gameState.step === 'end' && <div className="animate-pop"><h2 className="text-6xl font-black mb-8 text-white">最終得分</h2><div className="text-[7rem] font-mono font-black text-yellow-400 mb-8">{myPlayer.score}</div><div className="text-blue-200 text-4xl">感謝參與！</div></div>}
+
+                        {gameState.step === 'question' && gameState.qIndex === myPlayer.lastQ && (
+                            <div className="animate-pop">
+                                <div className="text-9xl mb-8 animate-bounce">🚀</div>
+                                <h2 className="text-6xl font-black text-green-400 mb-4">答案已送出</h2>
+                                <p className="text-white text-4xl">請看大螢幕結果</p>
+                            </div>
+                        )}
+
+                        {(gameState.step === 'reveal' || gameState.step === 'leaderboard') && (
+                            <div className="bg-white p-10 rounded-3xl shadow-2xl border-8 border-blue-500">
+                                <h2 className="text-6xl font-black mb-6 text-blue-900">本題結束</h2>
+                                <p className="text-gray-600 text-4xl font-bold">正確答案請看大螢幕</p>
+                            </div>
+                        )}
+
+                        {gameState.step === 'end' && (
+                            <div className="animate-pop">
+                                <h2 className="text-6xl font-black mb-8 text-white">最終得分</h2>
+                                <div className="text-[7rem] font-mono font-black text-yellow-400 mb-8">{myPlayer.score}</div>
+                                <div className="text-blue-200 text-4xl">感謝參與！</div>
+                            </div>
+                        )}
                     </div>
                 </div>
                 );
