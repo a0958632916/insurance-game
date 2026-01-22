@@ -79,6 +79,13 @@
 
         // 🎵 音效包設定 (10大風格 DJ 台)
         const SOUND_PACKS = {
+            kahoot: { 
+                name: "🎵 Kahoot", 
+                lobby: "https://ia802805.us.archive.org/23/items/kahoot-lobby-music-hd/Kahoot%21%20Lobby%20Music%20%28HD%29.mp3", 
+                game: "https://ia801509.us.archive.org/21/items/kahoot-music_202105/Kahoot%20Music.mp3", 
+                correct: "https://www.myinstants.com/media/sounds/kahoot-correct-answer-sound-effect.mp3", 
+                victory: "https://www.myinstants.com/media/sounds/kahoot-winner.mp3" 
+            },
             variety: { name: "🎉 綜藝", lobby: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", game: "https://assets.mixkit.co/active_storage/sfx/896/896-preview.mp3", correct: "https://www.myinstants.com/media/sounds/super-mario-coin.mp3", victory: "https://www.myinstants.com/media/sounds/final-fantasy-v-music-victory-fanfare.mp3" },
             tension: { name: "⚡ 緊張", lobby: "https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/255/255-preview.mp3", correct: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3", victory: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" },
             epic: { name: "🎻 史詩", lobby: "https://assets.mixkit.co/active_storage/sfx/888/888-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/131/131-preview.mp3", correct: "https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3", victory: "https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3" },
@@ -95,70 +102,108 @@
         const CHEER_SOUND = "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3";
 
         // ==========================================
-        // 2. 題目區 (已更新為宜冠通訊處專屬題庫)
+        // 2. 六組精選題庫 (完全更新)
         // ==========================================
-        const QUESTIONS = [
-            { 
-                q: "現代人手機滑不停，眼睛容易壞掉。哪張附約專門保護「靈魂之窗」，而且搭配 FitBack 最高折 3%？", 
-                opts: ["(A) 睛彩人生 PLUS", "(B) 精彩大結局", "(C) 目光如豆", "(D) 睜一隻眼閉一隻眼"], 
-                ans: 0, 
-                note: "「睛彩人生 PLUS」是您的護眼首選！" 
+        const QUESTION_PACKS = {
+            set1: {
+                name: "🏆 決戰金頭腦 (主場)",
+                data: [
+                    { q: "現代人手機滑不停，眼睛容易壞掉。哪張附約專門保護「靈魂之窗」，而且搭配 FitBack 最高折 3%？", opts: ["(A) 睛彩人生 PLUS", "(B) 精彩大結局", "(C) 目光如豆", "(D) 睜一隻眼閉一隻眼"], ans: 0, note: "「睛彩人生 PLUS」是您的護眼首選！" },
+                    { q: "許多人買美元保單是為了傳承，但哪一張保單很貼心，萬一罹患「重度癌症」可以「啟動豁免」？", opts: ["(A) 美滿人生", "(B) 美愛康盈", "(C) 美麗島", "(D) 美夢成真"], ans: 1, note: "「美愛康盈」提供重度癌症豁免保費機制，減輕負擔保障延續！" },
+                    { q: "宜蘭冬天濕冷，老人家最怕跌倒。哪張意外險活到 91 歲還會包一個「保費 50%」的大紅包給你？", opts: ["(A) 樂享平安", "(B) 老當益壯", "(C) 長命百歲", "(D) 樂不思蜀"], ans: 0, note: "「樂享平安」守護高齡長輩，活得久領得多！" },
+                    { q: "【腦筋急轉彎】什麼東西「早上四條腿，中午兩條腿，晚上三條腿」，而且越早買越便宜？", opts: ["(A) 怪物", "(B) 椅子", "(C) 人 (買保險)", "(D) 蜈蚣"], ans: 2, note: "人的一生生老病死，保險越早買越便宜喔！" },
+                    
+                    // ✅ 修改：錢錢錢
+                    { q: "【業務日常】比起「我愛你」，業務員更喜歡聽到哪三個字？", opts: ["(A) 辛苦了", "(B) 吃飽沒", "(C) 錢錢錢", "(D) 簽哪裡"], ans: 2, note: "錢錢錢！有業績最實在！(當然簽哪裡也很棒)" },
+
+                    { q: "宜蘭雨神同行，機車族最怕打滑「種田」。如果不小心骨折脫臼，哪張附約是我們的「骨科神醫」？", opts: ["(A) 鐵牛運功散", "(B) 新金骨力", "(C) 真的好痛", "(D) 筋開腰軟"], ans: 1, note: "「新金骨力」針對骨折脫臼提供完善保障！" },
+                    { q: "想要保費有去有回？哪張防癌險主打「無理賠回饋」，健康維持好，滿期把錢 (1.02倍) 還給你？", opts: ["(A) 滿溢康愛", "(B) 滿漢大餐", "(C) 滿載而歸", "(D) 溢於言表"], ans: 0, note: "「滿溢康愛」無理賠回饋機制，健康財富雙贏！" },
+                    
+                    // ✅ 修改：創造價值
+                    { q: "【業務日常】當客戶說「保費太貴」時，通常代表什麼機會來了？", opts: ["(A) 被拒絕的機會", "(B) 喝咖啡的機會", "(C) 創造價值與成交的機會", "(D) 回家睡覺的機會"], ans: 2, note: "嫌貨才是買貨人！這正是展現商品價值的好時機！" },
+
+                    { q: "針對「男性」攝護腺癌與「女性」乳癌，哪一對商品在第 6 年後會加碼給付 50%？", opts: ["(A) 牛郎 與 織女", "(B) 豪康愛 與 好康愛", "(C) 志明 與 春嬌", "(D) 羅密歐 與 茱麗葉"], ans: 1, note: "「豪康愛」與「好康愛」給予特定癌症加碼保障！" },
+                    
+                    // ✅ 修改：2026
+                    { q: "【送分題】2026 年國泰人壽的目標是什麼？", opts: ["(A) 業績長紅", "(B) 身體健康", "(C) 大家發大財", "(D) 以上皆是"], ans: 3, note: "祝大家 2026 業績長紅，身體健康，發大財！" }
+                ]
             },
-            { 
-                q: "哪張美元保單是「重症患者的救星」？若不幸罹患重度癌症，身故保險金可以「提前」拿來治病！", 
-                opts: ["(A) 美夢成真", "(B) 美愛康盈", "(C) 美麗誤會", "(D) 美利堅合眾國"], 
-                ans: 1, 
-                note: "「美愛康盈」提供重度癌症提前給付，治療更安心！" 
+            set2: {
+                name: "🦆 宜蘭在地通",
+                data: [
+                    { q: "我們現在所在的「蘭城晶英酒店」，最聞名全台灣的鎮店之寶美食是？", opts: ["(A) 三星蔥油餅", "(B) 櫻桃霸王鴨", "(C) 員山魚丸米粉", "(D) 羅東肉羹"], ans: 1, note: "沒吃過櫻桃霸王鴨，別說你來過蘭城晶英！" },
+                    { q: "宜蘭人講話有一個專屬的口頭禪，形容東西「很強、很棒」會說？", opts: ["(A) 水啦 (Sui)", "(B) 勁 (K勁)", "(C) 狂", "(D) 頂"], ans: 1, note: "這東西「勁」好呷！這個人「勁」厲害！" },
+                    { q: "宜蘭冬天最著名的特色是什麼？(身為業務最痛苦的事)", opts: ["(A) 每天大太陽", "(B) 下雪", "(C) 雨下不停", "(D) 沙塵暴"], ans: 2, note: "竹風蘭雨，宜蘭的雨是業務員意志力的考驗！" },
+                    { q: "宜蘭著名的「龜山島」，它的名字由來是因為形狀像什麼？", opts: ["(A) 烏龜", "(B) 饅頭", "(C) 鯨魚", "(D) 潛水艇"], ans: 0, note: "因為形狀像一隻浮在海面上的烏龜而得名。" },
+                    { q: "宜蘭名產「糕渣」常被拿來形容宜蘭人的個性，特色是？", opts: ["(A) 外冷內熱", "(B) 又臭又硬", "(C) 入口即化", "(D) 甜甜蜜蜜"], ans: 0, note: "外表冷冷的，裡面燙得要命，代表宜蘭人悶騷的熱情！" },
+                    { q: "宜蘭人吃「米粉羹」的時候，通常一定會配哪一樣小吃？", opts: ["(A) 臭豆腐", "(B) 奶凍捲", "(C) 牛舌餅", "(D) 雞排"], ans: 0, note: "米粉羹配臭豆腐，這是宜蘭人從小吃到大的絕配！" },
+                    { q: "號稱「宜蘭人的百貨公司」，在地人最愛逛的「宜蘭特有」超市是？", opts: ["(A) 全聯", "(B) 喜互惠", "(C) 家樂福", "(D) 好市多"], ans: 1, note: "喜互惠 (Surewell) 是宜蘭在地的超市霸主！" },
+                    { q: "宜蘭的名產「牛舌餅」，它形狀長得像什麼而得名？", opts: ["(A) 牛的舌頭", "(B) 牛的尾巴", "(C) 牛的耳朵", "(D) 牛角"], ans: 0, note: "長長扁扁的像牛舌，所以叫牛舌餅。" },
+                    { q: "下列哪一個不是宜蘭的行政區？", opts: ["(A) 礁溪", "(B) 羅東", "(C) 三星", "(D) 淡水"], ans: 3, note: "淡水在新北市喔！不要跑錯地方了！" },
+                    { q: "【送分題】宜冠通訊處的夥伴，最大的特色是什麼？", opts: ["(A) 顏值高", "(B) 專業度高", "(C) 向心力強", "(D) 以上皆是"], ans: 3, note: "我們就是一群有顏值、有專業又團結的團隊！" }
+                ]
             },
-            { 
-                q: "宜蘭冬天濕冷，老人家最怕跌倒。哪張意外險活到 91 歲還會包一個「保費 50%」的大紅包給你？", 
-                opts: ["(A) 樂享平安", "(B) 老當益壯", "(C) 長命百歲", "(D) 樂不思蜀"], 
-                ans: 0, 
-                note: "「樂享平安」守護高齡長輩，活得久領得多！" 
+            set3: {
+                name: "📱 整合行銷大師",
+                data: [
+                    { q: "國泰人壽的健康促進計畫「FitBack」中文名稱是什麼？", opts: ["(A) 瘦身吧", "(B) 減重吧", "(C) 健康吧", "(D) 跑步吧"], ans: 2, note: "FitBack 健康吧！走路就能賺回饋！" },
+                    { q: "參加 FitBack 健康吧，達到指定任務可以獲得什麼？", opts: ["(A) 小樹點", "(B) 蘋果", "(C) 貼紙", "(D) 獎狀"], ans: 0, note: "小樹點 (Tree Points) 可以折抵保費或兌換好禮喔！" },
+                    { q: "Cathay Walker Plus 主要是鼓勵大家做什麼運動？", opts: ["(A) 游泳", "(B) 走路/跑步", "(C) 舉重", "(D) 睡覺"], ans: 1, note: "日行萬步，健康有保固！" },
+                    { q: "國泰人壽 App 裡面，保戶可以做什麼事？", opts: ["(A) 查詢保單", "(B) 申請理賠", "(C) 借款", "(D) 以上皆是"], ans: 3, note: "國泰人壽 App 功能超強大，一指搞定大小事！" },
+                    { q: "FitBack 健康吧只要會員等級越高，就能享有更高的？", opts: ["(A) 保費折減", "(B) 利息", "(C) 手續費", "(D) 體重"], ans: 0, note: "努力運動提升等級，最高享有保費折減優惠！" },
+                    { q: "想要累積小樹點，除了走路還可以透過什麼方式？", opts: ["(A) 睡眠充足", "(B) 揪團運動", "(C) 閱讀健康文章", "(D) 以上皆是"], ans: 3, note: "多種健康任務，讓您輕鬆賺點數！" },
+                    { q: "國泰金控的「大樹」Logo 象徵什麼意義？", opts: ["(A) 遮風避雨", "(B) 向上生長", "(C) 穩健踏實", "(D) 以上皆是"], ans: 3, note: "大樹守護您與家人的幸福未來。" },
+                    { q: "對於「整合行銷」最好的描述是？", opts: ["(A) 只賣一種商品", "(B) 滿足客戶全方位需求", "(C) 強迫推銷", "(D) 只做產險"], ans: 1, note: "壽險、產險、信用卡、健康促進，全方位滿足客戶！" },
+                    { q: "使用國泰世華 CUBE 卡繳保費，有什麼好處？", opts: ["(A) 3% 回饋無上限", "(B) 罰款", "(C) 沒好處", "(D) 會被罵"], ans: 0, note: "刷 CUBE 卡繳保費，享有小樹點回饋！(依當期活動為準)" },
+                    { q: "【送分題】2026年，誰是數位轉型的領航者？", opts: ["(A) 鋼鐵人", "(B) 國泰人壽", "(C) 變形金剛", "(D) 哆啦A夢"], ans: 1, note: "國泰人壽數位領航，與您一起前進未來！" }
+                ]
             },
-            { 
-                q: "【腦筋急轉彎】什麼東西「早上四條腿，中午兩條腿，晚上三條腿」，而且越早買越便宜？", 
-                opts: ["(A) 怪物", "(B) 椅子", "(C) 人 (買保險)", "(D) 蜈蚣"], 
-                ans: 2, 
-                note: "人的一生生老病死，保險越早買越便宜喔！" 
+            set4: {
+                name: "💼 業務狀況題 (全新)",
+                data: [
+                    { q: "【迷信題】簽約前為了祈求順利，業務員「絕對不能」吃什麼水果？", opts: ["(A) 蘋果", "(B) 芭樂", "(C) 鳳梨", "(D) 橘子"], ans: 1, note: "吃了「芭樂」就會被開芭樂票 (空頭支票)，白忙一場啊！" },
+                    { q: "【心態題】被客戶拒絕第 10 次，這時候我們心裡應該要默念？", opts: ["(A) 我不幹了", "(B) 他沒眼光", "(C) 下一位會更好", "(D) 都是幻覺"], ans: 2, note: "拒絕是常態，堅持是心態，下一位客戶就在轉角！" },
+                    { q: "【狀況題】當客戶說「我沒錢」時，其實通常代表什麼意思？", opts: ["(A) 他真的破產了", "(B) 他不想理你", "(C) 覺得商品價值還不夠 (創造價值)", "(D) 他想借錢"], ans: 2, note: "沒錢通常是藉口，代表我們還沒創造出足夠的「需求與價值」！" },
+                    { q: "【增員題】看到朋友工作不順、想換跑道，我們第一反應是？", opts: ["(A) 借他錢", "(B) 請他吃飯", "(C) 躲遠一點", "(D) 邀請他來國泰"], ans: 3, note: "最好的幫助就是給他一份有發展的事業，來國泰就對了！" },
+                    { q: "【工具題】iPad (Cathay Box) 除了建議書，最大的功能是？", opts: ["(A) 追劇", "(B) 蓋泡麵", "(C) 墊便當", "(D) 行動辦公/即時服務"], ans: 3, note: "Cathay Box 是我們的行動辦公室，隨時隨地都能解決客戶問題！" },
+                    { q: "【修養題】遇到無理取鬧的「奧客」，專業的業務員會怎麼做？", opts: ["(A) 跟他吵架", "(B) 微笑聆聽並解決問題", "(C) 掛電話", "(D) 翻白眼"], ans: 1, note: "高EQ是業務的標配，微笑能化解尷尬，專業能贏得信任。" },
+                    { q: "【榮譽題】保險業務員的最高榮譽殿堂「MDRT」是指？", opts: ["(A) 百萬圓桌會員", "(B) 快樂圓桌武士", "(C) 很會吃飯", "(D) 超級業務員"], ans: 0, note: "MDRT (Million Dollar Round Table) 是全球壽險業的最高榮譽！" },
+                    { q: "【知識題】「長照險」跟「失能險」最大的差別在於？", opts: ["(A) 沒差別", "(B) 保費貴", "(C) 認定標準不同", "(D) 名字不同"], ans: 2, note: "長照看「狀態」(量表)，失能看「殘廢等級」，理賠標準不一樣喔！" },
+                    { q: "【現實題】月底最後一天晚上 11:59 分，業務員通常在幹嘛？", opts: ["(A) 睡大頭覺", "(B) 盯著報表確認業績", "(C) 吃宵夜", "(D) 追劇"], ans: 1, note: "直到最後一秒都不放棄，確認業績入帳才能安心睡覺！" },
+                    { q: "【送分題】在宜冠通訊處，最讓人感到溫暖的是什麼？", opts: ["(A) 冷氣", "(B) 飲水機", "(C) 棉被", "(D) 夥伴互相支援的感情"], ans: 3, note: "一個人走得快，一群人走得遠，夥伴的感情是無價的！" }
+                ]
             },
-            { 
-                q: "癌症治療費用貴森森，哪張防癌險把超先進的「質子、重粒子」治療都包進去，精準打擊癌細胞？", 
-                opts: ["(A) 精準康愛", "(B) 神槍手康愛", "(C) 瞄準康愛", "(D) 百發百中"], 
-                ans: 0, 
-                note: "「精準康愛」納入質子重粒子治療，抗癌更精準！" 
+            set5: {
+                name: "🥶 冷笑話大全",
+                data: [
+                    { q: "哪一種水果視力最差？", opts: ["(A) 西瓜", "(B) 芒果", "(C) 蓮霧", "(D) 芭樂"], ans: 1, note: "因為「芒果」(忙/盲)！" },
+                    { q: "為什麼蛤蜊要回家？", opts: ["(A) 因為它被排擠", "(B) 因為它想媽媽", "(C) 因為它愛家", "(D) 因為它自閉"], ans: 0, note: "因為它被「殼」離 (隔離) 了！(或者：因為他覺得很冷/被剝殼)" },
+                    { q: "紅豆生南國，那綠豆生哪裡？", opts: ["(A) 北國", "(B) 美國", "(C) 彰化", "(D) 嘉義"], ans: 3, note: "因為綠豆嘉義人 (綠豆加薏仁)！" },
+                    { q: "哪一個英文字母可以喝？", opts: ["(A) A", "(B) B", "(C) T", "(D) P"], ans: 2, note: "因為 T (Tea) 茶！" },
+                    { q: "誰最黑？", opts: ["(A) 包青天", "(B) 哆啦A夢", "(C) 烏鴉", "(D) 煤炭"], ans: 1, note: "因為哆啦A夢伸手不見五指！" },
+                    { q: "哪一種花最沒力？", opts: ["(A) 茉莉花", "(B) 玫瑰花", "(C) 牽牛花", "(D) 太陽花"], ans: 0, note: "因為「好一朵美麗的茉莉花」(好一朵沒力的茉莉花)！" },
+                    { q: "哪位古人最會跑？", opts: ["(A) 曹操", "(B) 劉備", "(C) 關羽", "(D) 張飛"], ans: 0, note: "因為「說曹操，曹操就到」！" },
+                    { q: "什麼動物最愛亂買東西？", opts: ["(A) 豬", "(B) 斑馬", "(C) 獅子", "(D) 麒麟"], ans: 1, note: "因為斑馬是「黑白馬」(台語：亂買)！" },
+                    { q: "皮卡丘站起來變什麼？", opts: ["(A) 皮卡兵", "(B) 皮卡跑", "(C) 皮卡蹲", "(D) 還是皮卡丘"], ans: 0, note: "皮卡兵 (皮卡丘 兵/乒 乓 變聲)" },
+                    { q: "【送分題】聽完這些冷笑話，現在感覺如何？", opts: ["(A) 這裡好冷", "(B) 想穿外套", "(C) 還是國泰最溫暖", "(D) 以上皆是"], ans: 3, note: "國泰人壽給您滿滿的溫暖！" }
+                ]
             },
-            { 
-                q: "宜蘭雨神同行，機車族最怕打滑「種田」。如果不小心骨折脫臼，哪張附約是我們的「骨科神醫」？", 
-                opts: ["(A) 鐵牛運功散", "(B) 新金骨力", "(C) 真的好痛", "(D) 筋開腰軟"], 
-                ans: 1, 
-                note: "「新金骨力」針對骨折脫臼提供完善保障！" 
-            },
-            { 
-                q: "想要保費有去有回？哪張防癌險主打「無理賠回饋」，健康維持好，滿期把錢 (1.02倍) 還給你？", 
-                opts: ["(A) 滿溢康愛", "(B) 滿漢大餐", "(C) 滿載而歸", "(D) 溢於言表"], 
-                ans: 0, 
-                note: "「滿溢康愛」無理賠回饋機制，健康財富雙贏！" 
-            },
-            { 
-                q: "【業務日常】當客戶說「我考慮一下」的時候，通常代表什麼意思？", 
-                opts: ["(A) 他真的在考慮", "(B) 他想問神明", "(C) 他在等你用「專業」說服他", "(D) 他想回家睡覺"], 
-                ans: 2, 
-                note: "展現你的專業與熱情，成交就在眼前！" 
-            },
-            { 
-                q: "針對「男性」攝護腺癌與「女性」乳癌，哪一對商品在第 6 年後會加碼給付 50%？", 
-                opts: ["(A) 牛郎 與 織女", "(B) 豪康愛 與 好康愛", "(C) 志明 與 春嬌", "(D) 羅密歐 與 茱麗葉"], 
-                ans: 1, 
-                note: "「豪康愛」與「好康愛」給予特定癌症加碼保障！" 
-            },
-            { 
-                q: "【送分題】為什麼宜冠通訊處的夥伴業績都這麼好？", 
-                opts: ["(A) 因為宜蘭風水好", "(B) 因為大家顏值高", "(C) 因為經理帶得好且夥伴夠專業", "(D) 因為客戶都很有錢"], 
-                ans: 2, 
-                note: "宜冠最棒！專業團隊，業績長紅！" 
+            set6: {
+                name: "👵 長輩同樂會",
+                data: [
+                    { q: "一年之中，哪一個月份的天數最少？", opts: ["(A) 2月", "(B) 4月", "(C) 6月", "(D) 9月"], ans: 0, note: "2月通常只有 28 或 29 天。" },
+                    { q: "「走路要靠右邊」，下一句接龍是什麼？", opts: ["(A) 兩隻老虎跑得快", "(B) 雖然比較遠", "(C) 這是交通規則", "(D) 比較不會被車撞"], ans: 2, note: "這是一首兒歌... 但現實中「行人靠邊走」才安全喔！" },
+                    { q: "端午節要吃粽子，那中秋節要吃什麼？", opts: ["(A) 湯圓", "(B) 月餅/柚子", "(C) 潤餅", "(D) 火雞"], ans: 1, note: "中秋月圓人團圓，吃月餅剝柚子。" },
+                    { q: "請問「松柏長青」通常是用來祝福誰？", opts: ["(A) 新婚夫妻", "(B) 小嬰兒", "(C) 畢業生", "(D) 長輩"], ans: 3, note: "祝福長輩身體健康，像松柏一樣長壽。" },
+                    { q: "台語諺語：「一兼二顧」，下一句是什麼？", opts: ["(A) 摸蛤仔兼洗褲", "(B) 無魚蝦也好", "(C) 吃碗內洗碗外", "(D) 沒米兼煮蕃薯湯"], ans: 0, note: "一兼二顧，摸蛤仔兼洗褲 (一舉兩得的意思)。" },
+                    { q: "預防失智症，醫生建議平常多做什麼休閒活動？", opts: ["(A) 睡覺", "(B) 看電視", "(C) 打麻將/動腦", "(D) 發呆"], ans: 2, note: "多動腦、多社交，打麻將是不錯的選擇喔！" },
+                    { q: "下列哪一種水果，切開來裡面像星星？", opts: ["(A) 蘋果", "(B) 楊桃", "(C) 西瓜", "(D) 香蕉"], ans: 1, note: "楊桃切面就是星星的形狀喔！" },
+                    { q: "台語諺語：「吃果子」要幹嘛？", opts: ["(A) 吐籽", "(B) 拜樹頭", "(C) 洗手", "(D) 削皮"], ans: 1, note: "吃果子拜樹頭，做人要懂得飲水思源。" },
+                    { q: "發生車禍要報警，要打幾號？", opts: ["(A) 110", "(B) 119", "(C) 112", "(D) 104"], ans: 0, note: "報警請打 110，救護車請打 119。" },
+                    { q: "【送分題】祝大家新年快樂，下一句是？", opts: ["(A) 紅包拿來", "(B) 恭喜發財", "(C) 萬事如意", "(D) 以上皆是"], ans: 3, note: "祝大家新年快樂，紅包滿滿，萬事如意！" }
+                ]
             }
-        ];
+        };
 
         function App() {
             const [view, setView] = useState('role-select'); 
@@ -170,10 +215,14 @@
             const [isProcessing, setIsProcessing] = useState(false);
             const [timer, setTimer] = useState(10); 
             const revealedRef = useRef(false);
+            
+            // 🆕 題庫選擇狀態 (預設隨機)
+            const [selectedSet, setSelectedSet] = useState('random');
 
             // 音效與 DJ 系統
             const [isMuted, setIsMuted] = useState(false);
-            const [currentTheme, setCurrentTheme] = useState('variety');
+            // 🎵 預設使用 Kahoot 風格
+            const [currentTheme, setCurrentTheme] = useState('kahoot');
             const audioRef = useRef(null);
             const cheerRef = useRef(new Audio(CHEER_SOUND));
 
@@ -203,6 +252,13 @@
 
                 const savedRoom = sessionStorage.getItem('host_room_code');
                 if (savedRoom) setRoomCode(savedRoom);
+                
+                // ✅ Magic Link 邏輯：自動帶入網址參數
+                const urlParams = new URLSearchParams(window.location.search);
+                const codeParam = urlParams.get('code');
+                if (codeParam) {
+                    setRoomCode(codeParam);
+                }
             }, []);
 
             // 🎵 切換主題邏輯
@@ -328,16 +384,34 @@
                         return;
                     }
                 }
-                createRoom();
+                // 進入選題模式
             };
 
             const createRoom = async () => {
                 const code = Math.floor(1000 + Math.random() * 9000).toString();
                 setRoomCode(code);
                 sessionStorage.setItem('host_room_code', code);
+                
+                // 🎲 題庫選擇邏輯
+                let chosenSetKey = selectedSet;
+                if (selectedSet === 'random') {
+                    const keys = Object.keys(QUESTION_PACKS);
+                    chosenSetKey = keys[Math.floor(Math.random() * keys.length)];
+                }
+
+                // 取得題目並洗牌
+                const currentQuestions = QUESTION_PACKS[chosenSetKey].data;
+                const shuffledOrder = [...Array(currentQuestions.length).keys()];
+                for (let i = shuffledOrder.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffledOrder[i], shuffledOrder[j]] = [shuffledOrder[j], shuffledOrder[i]];
+                }
+
                 await db.collection('rooms').doc(code).set({
-                    step: 'lobby', qIndex: 0, showAnswer: false, 
-                    startTime: 0, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    step: 'lobby', qIndex: 0, showAnswer: false, startTime: 0, 
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    themeSet: chosenSetKey, // 🌟 儲存選擇的題庫代號
+                    order: shuffledOrder // 儲存隨機順序
                 });
                 startHostListeners(code);
             };
@@ -345,8 +419,7 @@
             const startHostListeners = (code) => {
                 db.collection('rooms').doc(code).onSnapshot(doc => setGameState(doc.data()));
                 db.collection('rooms').doc(code).collection('players').onSnapshot(snap => {
-                    const list = []; 
-                    snap.forEach(d => list.push({id: d.id, ...d.data()}));
+                    const list = []; snap.forEach(d => list.push({id: d.id, ...d.data()}));
                     setPlayers(sortPlayers(list));
                 });
                 setView('host');
@@ -360,24 +433,17 @@
                 setIsProcessing(true);
                 try {
                     const ref = db.collection('rooms').doc(roomCode);
-                    if (action === 'reveal') {
-                        playSound('correct');
-                        await ref.update({ showAnswer: true, step: 'reveal' });
-                    } else if (action === 'end') {
-                        playSound('victory');
-                        fireConfetti();
-                    } else if (action === 'start' || action === 'nextQ') {
+                    
+                    // 取得當前題庫長度
+                    const currentSet = QUESTION_PACKS[gameState.themeSet || 'set1'].data;
+
+                    if (action === 'reveal') { playSound('correct'); await ref.update({ showAnswer: true, step: 'reveal' }); }
+                    else if (action === 'end') { playSound('victory'); fireConfetti(); }
+                    else if (action === 'start' || action === 'nextQ') {
                         const nextIdx = action === 'start' ? 0 : gameState.qIndex + 1;
-                        if (action === 'nextQ' && nextIdx >= QUESTIONS.length) {
-                            playSound('victory'); 
-                            fireConfetti();
-                            await ref.update({ step: 'end' });
-                        } else {
-                            await ref.update({ step: 'question', qIndex: nextIdx, showAnswer: false, startTime: Date.now() });
-                        }
-                    } else if (action === 'leaderboard') {
-                        await ref.update({ step: 'leaderboard' });
-                    }
+                        if (action === 'nextQ' && nextIdx >= currentSet.length) { playSound('victory'); fireConfetti(); await ref.update({ step: 'end' }); }
+                        else { await ref.update({ step: 'question', qIndex: nextIdx, showAnswer: false, startTime: Date.now() }); }
+                    } else if (action === 'leaderboard') { await ref.update({ step: 'leaderboard' }); }
                 } catch (e) { console.error(e); } 
                 finally { setTimeout(() => setIsProcessing(false), 1000); }
             };
@@ -407,7 +473,12 @@
 
             const playerAnswer = async (optIndex) => {
                 if (gameState.step !== 'question' || gameState.qIndex === myPlayer.lastQ) return;
-                const currentQ = QUESTIONS[gameState.qIndex];
+                
+                // 🌟 從 gameState.themeSet 取得正確的題目
+                const currentSet = QUESTION_PACKS[gameState.themeSet || 'set1'].data;
+                const realQIndex = gameState.order ? gameState.order[gameState.qIndex] : gameState.qIndex;
+                const currentQ = currentSet[realQIndex];
+
                 const isCorrect = optIndex === currentQ.ans;
                 let points = 0;
                 if (isCorrect) {
@@ -458,7 +529,23 @@
                         <h2 className="text-3xl md:text-5xl font-bold text-white text-shadow-strong">💰 加碼年終送夠夠 💰</h2>
                     </div>
                     <div className="flex flex-col gap-8 w-full max-w-xl justify-center">
-                        <button onClick={initHost} className="bg-blue-600 hover:bg-blue-500 w-full py-6 rounded-3xl text-3xl font-bold btn-push shadow-2xl border-4 border-blue-300 text-white flex justify-center items-center gap-4"><span>📺</span> 我是主持人</button>
+                        {/* 🌟 選題面板 */}
+                        <div className="bg-blue-900/50 p-6 rounded-3xl border-4 border-blue-500 flex flex-col gap-4">
+                            <label className="text-xl font-bold text-blue-200">選擇本次題庫：</label>
+                            <select className="w-full p-4 rounded-xl bg-black text-white text-2xl font-bold border-2 border-blue-400 outline-none" value={selectedSet} onChange={(e) => setSelectedSet(e.target.value)}>
+                                <option value="set1">🏆 決戰金頭腦 (主場)</option>
+                                <option value="set2">🦆 宜蘭在地通</option>
+                                <option value="set3">📱 整合行銷大師</option>
+                                <option value="set4">💼 業務狀況題</option>
+                                <option value="set5">🥶 冷笑話大全</option>
+                                <option value="set6">👵 長輩同樂會</option>
+                                <option value="random">🎲 隨機挑選題庫 (驚喜包)</option>
+                            </select>
+                            <button onClick={createRoom} className="bg-blue-600 hover:bg-blue-500 w-full py-6 rounded-2xl text-3xl font-bold btn-push shadow-2xl text-white flex justify-center items-center gap-4">
+                                <span>📺</span> 建立房間 (我是主持人)
+                            </button>
+                        </div>
+
                         <div className="bg-black/40 backdrop-blur-md w-full p-8 rounded-3xl flex flex-col justify-center space-y-6 shadow-2xl border-2 border-yellow-400/50">
                             <div className="text-center font-bold text-4xl mb-2 text-yellow-300 text-shadow-strong">📱 我是參賽者</div>
                             <input placeholder="輸入房間號" className="w-full p-6 bg-white/95 rounded-2xl text-center text-4xl font-bold outline-none text-black border-4 border-blue-500 focus:border-yellow-400 placeholder-gray-500" value={roomCode} onChange={e=>setRoomCode(e.target.value)} type="tel"/>
@@ -474,6 +561,11 @@
                 const totalPlayers = players.length;
                 const answeredCount = players.filter(p => p.lastQ === gameState.qIndex).length;
                 
+                // 🌟 取得當前使用的題庫與題目
+                const currentSet = QUESTION_PACKS[gameState.themeSet || 'set1'].data;
+                const realQIndex = gameState.order ? gameState.order[gameState.qIndex] : gameState.qIndex;
+                const currentQ = currentSet[realQIndex];
+
                 // 📊 計算每個選項的票數 (用於長條圖)
                 const answerStats = [0, 0, 0, 0];
                 if (gameState.showAnswer) {
@@ -489,6 +581,7 @@
                     <DjPanel />
                     <div className="p-6 bg-blue-900/80 flex justify-between items-center shadow-lg z-10 border-b-4 border-yellow-400 backdrop-blur-sm">
                         <div className="bg-yellow-400 text-black px-8 py-3 rounded-2xl font-black text-4xl shadow-md border-2 border-white">房間：{roomCode}</div>
+                        <div className="text-4xl font-bold text-white">主題：<span className="text-yellow-300">{QUESTION_PACKS[gameState.themeSet || 'set1'].name}</span></div>
                         <div className="text-5xl font-black text-white text-shadow-strong">線上：<span className="text-yellow-400">{totalPlayers}</span> 人</div>
                     </div>
 
@@ -497,6 +590,22 @@
                             <div className="animate-pop w-full max-w-5xl flex flex-col items-center">
                                 <h2 className="text-7xl font-black mb-8 text-white text-shadow-strong">請輸入房間號</h2>
                                 <div className="text-[14rem] font-mono font-black text-yellow-400 leading-none mb-12 text-shadow-strong">{roomCode}</div>
+
+                                {/* ✅ 點名牆 */}
+                                <div className="w-full max-h-[300px] overflow-y-auto bg-black/40 p-4 rounded-xl border border-blue-500/30 mb-8 shadow-inner no-scrollbar">
+                                    <div className="flex flex-wrap gap-4 justify-center">
+                                        {players.length === 0 ? (
+                                            <span className="text-2xl text-gray-400 animate-pulse">等待戰士加入中...</span>
+                                        ) : (
+                                            players.map(p => (
+                                                <div key={p.id} className="bg-blue-600/90 text-white px-6 py-2 rounded-full text-2xl font-bold shadow-lg animate-pop border border-blue-300">
+                                                    {p.name}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
                                 <button onClick={() => hostAction('start')} disabled={isProcessing} className={`bg-green-600 hover:bg-green-500 px-24 py-10 rounded-full text-7xl font-black shadow-2xl btn-push text-white border-8 border-white ${isProcessing ? 'btn-disabled' : ''}`}>開始遊戲 🚀</button>
                             </div>
                         )}
@@ -515,13 +624,13 @@
                                     </div>
                                 </div>
                                 <h2 className="text-6xl md:text-7xl font-black mb-12 leading-tight text-white text-shadow-strong bg-black/40 p-8 rounded-3xl backdrop-blur-sm border-2 border-white/30">
-                                    {QUESTIONS[gameState.qIndex].q}
+                                    {currentQ.q}
                                 </h2>
                                 <div className="grid grid-cols-2 gap-8">
-                                    {QUESTIONS[gameState.qIndex].opts.map((opt, idx) => (
+                                    {currentQ.opts.map((opt, idx) => (
                                         <div key={idx} className={`relative p-10 text-5xl font-bold rounded-3xl text-left border-4 transition-all duration-300 shadow-lg overflow-hidden ${
                                             gameState.showAnswer 
-                                                ? (idx === QUESTIONS[gameState.qIndex].ans 
+                                                ? (idx === currentQ.ans 
                                                     ? 'bg-green-600 border-white text-white scale-105 shadow-2xl z-10' 
                                                     : 'bg-gray-800 border-gray-600 text-gray-500 opacity-50')
                                                 : 'bg-white text-blue-900 border-blue-300'
@@ -535,13 +644,12 @@
                                             )}
                                             <div className="relative z-10 flex justify-between">
                                                 <span>{opt}</span>
-                                                {/* 顯示票數 */}
                                                 {gameState.showAnswer && <span className="text-yellow-300 font-mono ml-4">{answerStats[idx]}人</span>}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                {gameState.showAnswer && <div className="mt-12 animate-pop"><div className="inline-block bg-yellow-400 border-8 border-white text-black text-5xl font-bold px-16 py-8 rounded-full shadow-2xl transform -rotate-1">💡 解析：{QUESTIONS[gameState.qIndex].note}</div></div>}
+                                {gameState.showAnswer && <div className="mt-12 animate-pop"><div className="inline-block bg-yellow-400 border-8 border-white text-black text-5xl font-bold px-16 py-8 rounded-full shadow-2xl transform -rotate-1">💡 解析：{currentQ.note}</div></div>}
                             </div>
                         )}
 
