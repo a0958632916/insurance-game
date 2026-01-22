@@ -13,15 +13,17 @@
     <!-- 2. Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- 3. 特效庫 (彩帶) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
-        /* 🎨 視覺核心：皇家深藍 + 流金 (適合投影機的高對比深色模式) */
+        /* 🎨 視覺核心：蘭城晶英專用 (深海軍藍 + 流金) */
         body { 
-            background: radial-gradient(circle at center, #1e3a8a 0%, #020617 100%); 
+            background: radial-gradient(circle at center, #172554 0%, #020617 100%); 
             color: #ffffff; 
             font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; 
             overflow-x: hidden; 
-            touch-action: manipulation;
+            touch-action: manipulation; /* 禁止雙擊縮放 */
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -31,7 +33,7 @@
             text-shadow: 3px 3px 0px #000, 0 0 20px rgba(250, 204, 21, 0.6);
         }
         
-        /* 👓 文字加黑邊，投影依然清晰 */
+        /* 👓 高對比投影優化 */
         .text-shadow-strong { text-shadow: 2px 2px 0px #000000; }
 
         /* 🔘 按鈕立體感 */
@@ -39,15 +41,20 @@
         .btn-push:active:not(:disabled) { transform: translateY(8px); box-shadow: 0 0 0 rgba(0,0,0,0); }
         .btn-disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(100%); transform: none !important; box-shadow: none !important; }
         
-        /* 📱 手機端：田字型超大按鈕 (防誤觸) */
+        /* 📱 手機端：田字型超大按鈕 */
         .grid-btn-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr;
-            gap: 12px;
-            height: 55vh;
+            gap: 16px; /* 加大間距防誤觸 */
+            height: 60vh;
             width: 100%;
+            padding: 10px;
         }
+
+        /* DJ 面板隱藏卷軸 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* 動畫 */
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -63,29 +70,25 @@
         const { useState, useEffect, useRef } = React;
 
         // ==========================================
-        // 1. 系統設定 (已填寫完成)
+        // 1. 系統設定 (已寫死，免輸入)
         // ==========================================
         const FIREBASE_CONFIG = {
             projectId: "cathaylife-e0714", 
             apiKey: "AIzaSyDoeEnc5-cebY6RfWAYnGM5y1BwLHFG5_g"    
         };
 
-        // 🎵 音效包設定 (DJ 台)
+        // 🎵 音效包設定 (10大風格 DJ 台)
         const SOUND_PACKS = {
-            variety: {
-                name: "🎉 綜藝",
-                lobby: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-                game: "https://assets.mixkit.co/active_storage/sfx/896/896-preview.mp3",
-                correct: "https://www.myinstants.com/media/sounds/super-mario-coin.mp3",
-                victory: "https://www.myinstants.com/media/sounds/final-fantasy-v-music-victory-fanfare.mp3"
-            },
-            tension: {
-                name: "⚡ 緊張",
-                lobby: "https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3", 
-                game: "https://assets.mixkit.co/active_storage/sfx/255/255-preview.mp3",
-                correct: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3",
-                victory: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"
-            }
+            variety: { name: "🎉 綜藝", lobby: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", game: "https://assets.mixkit.co/active_storage/sfx/896/896-preview.mp3", correct: "https://www.myinstants.com/media/sounds/super-mario-coin.mp3", victory: "https://www.myinstants.com/media/sounds/final-fantasy-v-music-victory-fanfare.mp3" },
+            tension: { name: "⚡ 緊張", lobby: "https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/255/255-preview.mp3", correct: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3", victory: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" },
+            epic: { name: "🎻 史詩", lobby: "https://assets.mixkit.co/active_storage/sfx/888/888-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/131/131-preview.mp3", correct: "https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3", victory: "https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3" },
+            retro: { name: "👾 電玩", lobby: "https://assets.mixkit.co/active_storage/sfx/446/446-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/447/447-preview.mp3", correct: "https://www.myinstants.com/media/sounds/1-up-mario.mp3", victory: "https://www.myinstants.com/media/sounds/stage-clear.mp3" },
+            chill: { name: "☕ 爵士", lobby: "https://assets.mixkit.co/active_storage/sfx/147/147-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/896/896-preview.mp3", correct: "https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3", victory: "https://www.myinstants.com/media/sounds/tada-fanfare-a.mp3" },
+            horror: { name: "👻 懸疑", lobby: "https://assets.mixkit.co/active_storage/sfx/134/134-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/307/307-preview.mp3", correct: "https://assets.mixkit.co/active_storage/sfx/2059/2059-preview.mp3", victory: "https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3" },
+            rock: { name: "🎸 搖滾", lobby: "https://assets.mixkit.co/active_storage/sfx/116/116-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/262/262-preview.mp3", correct: "https://assets.mixkit.co/active_storage/sfx/3004/3004-preview.mp3", victory: "https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3" },
+            cute: { name: "👶 可愛", lobby: "https://assets.mixkit.co/active_storage/sfx/97/97-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/96/96-preview.mp3", correct: "https://assets.mixkit.co/active_storage/sfx/1110/1110-preview.mp3", victory: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" },
+            scifi: { name: "🤖 科幻", lobby: "https://assets.mixkit.co/active_storage/sfx/119/119-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/366/366-preview.mp3", correct: "https://assets.mixkit.co/active_storage/sfx/2002/2002-preview.mp3", victory: "https://assets.mixkit.co/active_storage/sfx/2016/2016-preview.mp3" },
+            drum: { name: "🥁 戰鼓", lobby: "https://assets.mixkit.co/active_storage/sfx/130/130-preview.mp3", game: "https://assets.mixkit.co/active_storage/sfx/131/131-preview.mp3", correct: "https://assets.mixkit.co/active_storage/sfx/2060/2060-preview.mp3", victory: "https://assets.mixkit.co/active_storage/sfx/2022/2022-preview.mp3" }
         };
 
         // 額外音效：歡呼聲 (手動播放用)
@@ -242,6 +245,22 @@
                 });
             };
 
+            // 🎉 彩帶特效
+            const fireConfetti = () => {
+                const duration = 5 * 1000;
+                const animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+                const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+                const interval = setInterval(function() {
+                    const timeLeft = animationEnd - Date.now();
+                    if (timeLeft <= 0) { return clearInterval(interval); }
+                    const particleCount = 50 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+                }, 250);
+            };
+
             // --- Host Functions ---
             const initHost = async () => {
                 if(!db) return;
@@ -291,10 +310,13 @@
                         await ref.update({ showAnswer: true, step: 'reveal' });
                     } else if (action === 'end') {
                         playSound('victory');
+                        fireConfetti();
                     } else if (action === 'start' || action === 'nextQ') {
                         const nextIdx = action === 'start' ? 0 : gameState.qIndex + 1;
                         if (action === 'nextQ' && nextIdx >= QUESTIONS.length) {
-                            playSound('victory'); await ref.update({ step: 'end' });
+                            playSound('victory'); 
+                            fireConfetti();
+                            await ref.update({ step: 'end' });
                         } else {
                             await ref.update({ step: 'question', qIndex: nextIdx, showAnswer: false, startTime: Date.now() });
                         }
@@ -350,27 +372,27 @@
             const DjPanel = () => {
                 if (view !== 'host') return null;
                 return (
-                    <div className="fixed top-4 right-4 z-50 flex gap-2">
-                        <div className="bg-black/70 backdrop-blur-md p-1 rounded-full flex border border-gray-600">
+                    <div className="fixed top-4 right-4 z-50 flex gap-2 flex-wrap justify-end">
+                        <div className="bg-black/80 backdrop-blur-md p-2 rounded-xl flex gap-1 border border-gray-600 max-w-[400px] flex-wrap justify-center shadow-xl overflow-x-auto no-scrollbar">
                             {Object.keys(SOUND_PACKS).map(key => (
                                 <button 
                                     key={key}
                                     onClick={() => changeTheme(key)}
-                                    className={`px-3 py-2 rounded-full text-sm font-bold transition ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white'}`}
+                                    className={`px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white bg-gray-700/50'}`}
                                 >
                                     {SOUND_PACKS[key].name}
                                 </button>
                             ))}
-                            <button onClick={playCheer} className="px-3 py-2 rounded-full text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 ml-2">👏 歡呼</button>
+                            <button onClick={playCheer} className="px-3 py-2 rounded-lg text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 shadow-md ml-1 whitespace-nowrap">👏 歡呼</button>
                         </div>
-                        <button onClick={toggleMute} className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-12 h-12 flex items-center justify-center">
+                        <button onClick={toggleMute} className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-14 h-14 flex items-center justify-center shrink-0">
                             {isMuted ? "🔇" : "🔊"}
                         </button>
                     </div>
                 );
             };
 
-            // 1. Role Select (首頁)
+            // 1. Role Select
             if (view === 'role-select') return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-12">
                     <DjPanel />
@@ -390,11 +412,22 @@
                 </div>
             );
 
-            // 2. Host (投影優化版)
+            // 2. Host
             if (view === 'host') {
                 const totalPlayers = players.length;
                 const answeredCount = players.filter(p => p.lastQ === gameState.qIndex).length;
+                const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(window.location.href);
                 
+                // 📊 計算每個選項的票數 (用於長條圖)
+                const answerStats = [0, 0, 0, 0];
+                if (gameState.showAnswer) {
+                    players.forEach(p => {
+                        if (p.lastQ === gameState.qIndex && p.lastSelection >= 0 && p.lastSelection < 4) {
+                            answerStats[p.lastSelection]++;
+                        }
+                    });
+                }
+
                 return (
                 <div className="min-h-screen flex flex-col">
                     <DjPanel />
@@ -405,9 +438,13 @@
 
                     <div className="flex-1 flex flex-col items-center justify-center p-4 text-center overflow-y-auto">
                         {gameState.step === 'lobby' && (
-                            <div className="animate-pop w-full max-w-5xl">
-                                <h2 className="text-7xl font-black mb-12 text-white text-shadow-strong">請手機輸入房間號</h2>
-                                <div className="text-[14rem] font-mono font-black text-yellow-400 leading-none mb-16 text-shadow-strong">{roomCode}</div>
+                            <div className="animate-pop w-full max-w-5xl flex flex-col items-center">
+                                <h2 className="text-7xl font-black mb-8 text-white text-shadow-strong">請掃描 QR Code</h2>
+                                <div className="bg-white p-4 rounded-3xl shadow-2xl mb-8">
+                                    <img src={qrUrl} alt="QR Code" className="w-[300px] h-[300px]" />
+                                </div>
+                                <h2 className="text-6xl font-black mb-4 text-white text-shadow-strong">或輸入房間號</h2>
+                                <div className="text-[14rem] font-mono font-black text-yellow-400 leading-none mb-12 text-shadow-strong">{roomCode}</div>
                                 <button onClick={() => hostAction('start')} disabled={isProcessing} className={`bg-green-600 hover:bg-green-500 px-24 py-10 rounded-full text-7xl font-black shadow-2xl btn-push text-white border-8 border-white ${isProcessing ? 'btn-disabled' : ''}`}>開始遊戲 🚀</button>
                             </div>
                         )}
@@ -430,14 +467,25 @@
                                 </h2>
                                 <div className="grid grid-cols-2 gap-8">
                                     {QUESTIONS[gameState.qIndex].opts.map((opt, idx) => (
-                                        <div key={idx} className={`p-10 text-5xl font-bold rounded-3xl text-left border-4 transition-all duration-300 shadow-lg ${
+                                        <div key={idx} className={`relative p-10 text-5xl font-bold rounded-3xl text-left border-4 transition-all duration-300 shadow-lg overflow-hidden ${
                                             gameState.showAnswer 
                                                 ? (idx === QUESTIONS[gameState.qIndex].ans 
                                                     ? 'bg-green-600 border-white text-white scale-105 shadow-2xl z-10' 
                                                     : 'bg-gray-800 border-gray-600 text-gray-500 opacity-50')
                                                 : 'bg-white text-blue-900 border-blue-300'
                                         }`}>
-                                            {opt}
+                                            {/* 📊 長條圖條 (Bar) */}
+                                            {gameState.showAnswer && (
+                                                <div 
+                                                    className="absolute bottom-0 left-0 h-2 bg-yellow-400/50 bar-grow" 
+                                                    style={{ width: `${(answerStats[idx] / Math.max(1, answeredCount)) * 100}%`, height: '100%' }}
+                                                ></div>
+                                            )}
+                                            <div className="relative z-10 flex justify-between">
+                                                <span>{opt}</span>
+                                                {/* 顯示票數 */}
+                                                {gameState.showAnswer && <span className="text-yellow-300 font-mono ml-4">{answerStats[idx]}人</span>}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
