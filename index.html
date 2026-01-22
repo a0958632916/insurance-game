@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>決戰國泰金頭腦</title>
     
-    <!-- 核心引擎 -->
+    <!-- 1. 核心引擎 -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase -->
+    <!-- 2. Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
-        /* 🎨 蘭城晶英專用：深海軍藍 + 流金配色 (投影機對比度優化) */
+        /* 🎨 視覺核心：皇家深藍 + 流金 (適合投影機的高對比深色模式) */
         body { 
             background: radial-gradient(circle at center, #1e3a8a 0%, #020617 100%); 
             color: #ffffff; 
@@ -25,18 +25,18 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* ✨ 標題文字特效：黑邊加強，確保在任何背景都清楚 */
+        /* ✨ 標題金光特效 */
         .title-gold {
             color: #facc15;
-            text-shadow: 3px 3px 0px #000000, 0 0 15px rgba(250, 204, 21, 0.6);
+            text-shadow: 3px 3px 0px #000, 0 0 20px rgba(250, 204, 21, 0.6);
         }
-        .text-shadow-strong {
-            text-shadow: 2px 2px 0px #000000;
-        }
+        
+        /* 👓 文字加黑邊，投影依然清晰 */
+        .text-shadow-strong { text-shadow: 2px 2px 0px #000000; }
 
-        /* 🔘 按鈕特效：立體感 */
-        .btn-push { transition: all 0.1s; transform: translateY(0); box-shadow: 0 6px 0 rgba(0,0,0,0.4); } 
-        .btn-push:active:not(:disabled) { transform: translateY(6px); box-shadow: 0 0 0 rgba(0,0,0,0); }
+        /* 🔘 按鈕立體感 */
+        .btn-push { transition: all 0.1s; transform: translateY(0); box-shadow: 0 8px 0 rgba(0,0,0,0.4); } 
+        .btn-push:active:not(:disabled) { transform: translateY(8px); box-shadow: 0 0 0 rgba(0,0,0,0); }
         .btn-disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(100%); transform: none !important; box-shadow: none !important; }
         
         /* 📱 手機端：田字型超大按鈕 (防誤觸) */
@@ -63,23 +63,36 @@
         const { useState, useEffect, useRef } = React;
 
         // ==========================================
-        // 1. 系統設定
+        // 1. 系統設定 (已填寫完成)
         // ==========================================
         const FIREBASE_CONFIG = {
             projectId: "cathaylife-e0714", 
             apiKey: "AIzaSyDoeEnc5-cebY6RfWAYnGM5y1BwLHFG5_g"    
         };
 
-        // 音效設定 (僅 Host 使用)
-        const SOUNDS = {
-            lobby: "https://assets.mixkit.co/active_storage/sfx/255/255-preview.mp3",
-            game: "https://assets.mixkit.co/active_storage/sfx/896/896-preview.mp3",
-            correct: "https://www.myinstants.com/media/sounds/super-mario-coin.mp3",
-            victory: "https://www.myinstants.com/media/sounds/final-fantasy-v-music-victory-fanfare.mp3"
+        // 🎵 音效包設定 (DJ 台)
+        const SOUND_PACKS = {
+            variety: {
+                name: "🎉 綜藝",
+                lobby: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                game: "https://assets.mixkit.co/active_storage/sfx/896/896-preview.mp3",
+                correct: "https://www.myinstants.com/media/sounds/super-mario-coin.mp3",
+                victory: "https://www.myinstants.com/media/sounds/final-fantasy-v-music-victory-fanfare.mp3"
+            },
+            tension: {
+                name: "⚡ 緊張",
+                lobby: "https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3", 
+                game: "https://assets.mixkit.co/active_storage/sfx/255/255-preview.mp3",
+                correct: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3",
+                victory: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"
+            }
         };
 
+        // 額外音效：歡呼聲 (手動播放用)
+        const CHEER_SOUND = "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3";
+
         // ==========================================
-        // 2. 題目區 (10題)
+        // 2. 題目區
         // ==========================================
         const QUESTIONS = [
             { q: "針對男性與女性容易發生的特定癌症，哪一對「情侶檔」商品可加碼給付 50%？", opts: ["(A) 羅密歐 與 茱麗葉", "(B) 豪康愛(男) 與 好康愛(女)", "(C) 真心安 與 真安安", "(D) 大陸新娘 與 台灣郎"], ans: 1, note: "針對特定性別癌症，第6年後最高額外給付 50%。" },
@@ -105,21 +118,24 @@
             const [timer, setTimer] = useState(10); 
             const revealedRef = useRef(false);
 
-            // 音效 (僅 Host)
+            // 音效與 DJ 系統
             const [isMuted, setIsMuted] = useState(false);
+            const [currentTheme, setCurrentTheme] = useState('variety');
             const audioRef = useRef(null);
+            const cheerRef = useRef(new Audio(CHEER_SOUND));
 
             useEffect(() => {
+                // 初始化預設音效
                 audioRef.current = {
-                    lobby: new Audio(SOUNDS.lobby),
-                    game: new Audio(SOUNDS.game),
-                    correct: new Audio(SOUNDS.correct),
-                    victory: new Audio(SOUNDS.victory)
+                    lobby: new Audio(SOUND_PACKS[currentTheme].lobby),
+                    game: new Audio(SOUND_PACKS[currentTheme].game),
+                    correct: new Audio(SOUND_PACKS[currentTheme].correct),
+                    victory: new Audio(SOUND_PACKS[currentTheme].victory)
                 };
                 audioRef.current.lobby.loop = true;
-                audioRef.current.lobby.volume = 0.4;
+                audioRef.current.lobby.volume = 0.5;
                 audioRef.current.game.loop = true;
-                audioRef.current.game.volume = 0.3;
+                audioRef.current.game.volume = 0.4;
 
                 if (!firebase.apps.length) {
                     try {
@@ -136,19 +152,43 @@
                 if (savedRoom) setRoomCode(savedRoom);
             }, []);
 
-            // 🎵 音樂邏輯
-            useEffect(() => {
-                if (isMuted || view !== 'host') {
-                    audioRef.current.lobby.pause();
-                    audioRef.current.game.pause();
-                    return;
-                }
+            // 🎵 切換主題邏輯
+            const changeTheme = (themeKey) => {
+                if (view !== 'host') return;
                 audioRef.current.lobby.pause();
                 audioRef.current.game.pause();
 
-                if (gameState.step === 'lobby') audioRef.current.lobby.play().catch(e=>{});
-                else if (['question', 'reveal', 'leaderboard'].includes(gameState.step)) audioRef.current.game.play().catch(e=>{});
-            }, [gameState.step, view, isMuted]);
+                audioRef.current.lobby.src = SOUND_PACKS[themeKey].lobby;
+                audioRef.current.game.src = SOUND_PACKS[themeKey].game;
+                audioRef.current.correct.src = SOUND_PACKS[themeKey].correct;
+                audioRef.current.victory.src = SOUND_PACKS[themeKey].victory;
+
+                setCurrentTheme(themeKey);
+
+                if (!isMuted) {
+                    if (gameState.step === 'lobby') audioRef.current.lobby.play().catch(()=>{});
+                    else if (['question', 'reveal', 'leaderboard'].includes(gameState.step)) audioRef.current.game.play().catch(()=>{});
+                }
+            };
+
+            // 🎵 播放邏輯
+            useEffect(() => {
+                if (isMuted || view !== 'host') {
+                    if (audioRef.current) {
+                        audioRef.current.lobby.pause();
+                        audioRef.current.game.pause();
+                    }
+                    return;
+                }
+                
+                if (audioRef.current) {
+                    audioRef.current.lobby.pause();
+                    audioRef.current.game.pause();
+
+                    if (gameState.step === 'lobby') audioRef.current.lobby.play().catch(e=>{});
+                    else if (['question', 'reveal', 'leaderboard'].includes(gameState.step)) audioRef.current.game.play().catch(e=>{});
+                }
+            }, [gameState.step, view, isMuted, currentTheme]);
 
             const playSound = (type) => {
                 if (isMuted || view !== 'host') return;
@@ -156,12 +196,18 @@
                 if (sound) { sound.currentTime = 0; sound.play().catch(()=>{}); }
             };
 
+            const playCheer = () => {
+                if (isMuted || view !== 'host') return;
+                cheerRef.current.currentTime = 0;
+                cheerRef.current.play().catch(()=>{});
+            };
+
             const toggleMute = () => {
                 if (view !== 'host') return;
                 setIsMuted(prev => !prev);
             };
 
-            // 重置計時
+            // ⏱️ 計時器
             useEffect(() => {
                 if (gameState.step === 'question') {
                     setTimer(10);
@@ -169,7 +215,6 @@
                 }
             }, [gameState.qIndex, gameState.step]);
 
-            // 倒數與自動公佈
             useEffect(() => {
                 let interval;
                 if (view === 'host' && gameState.step === 'question' && !revealedRef.current) {
@@ -290,7 +335,7 @@
                     const now = Date.now();
                     const start = gameState.startTime || now;
                     const elapsedSec = (now - start) / 1000;
-                    points = Math.max(200, Math.round(1000 - (elapsedSec * 60))); // 越快越高分
+                    points = Math.max(200, Math.round(1000 - (elapsedSec * 60))); // 極速計分
                 }
                 const roomRef = db.collection('rooms').doc(roomCode);
                 setMyPlayer(p => ({...p, lastQ: gameState.qIndex}));
@@ -301,19 +346,34 @@
                 } catch(e) { console.error("Answer failed"); }
             };
 
-            const SoundToggle = () => {
+            // DJ 面板 (僅 Host)
+            const DjPanel = () => {
                 if (view !== 'host') return null;
                 return (
-                    <button onClick={toggleMute} className="fixed top-4 right-4 z-50 bg-yellow-400 text-black border-4 border-black p-3 rounded-full shadow-xl transition hover:bg-yellow-300 text-2xl w-16 h-16 flex items-center justify-center">
-                        {isMuted ? "🔇" : "🔊"}
-                    </button>
+                    <div className="fixed top-4 right-4 z-50 flex gap-2">
+                        <div className="bg-black/70 backdrop-blur-md p-1 rounded-full flex border border-gray-600">
+                            {Object.keys(SOUND_PACKS).map(key => (
+                                <button 
+                                    key={key}
+                                    onClick={() => changeTheme(key)}
+                                    className={`px-3 py-2 rounded-full text-sm font-bold transition ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white'}`}
+                                >
+                                    {SOUND_PACKS[key].name}
+                                </button>
+                            ))}
+                            <button onClick={playCheer} className="px-3 py-2 rounded-full text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 ml-2">👏 歡呼</button>
+                        </div>
+                        <button onClick={toggleMute} className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-12 h-12 flex items-center justify-center">
+                            {isMuted ? "🔇" : "🔊"}
+                        </button>
+                    </div>
                 );
             };
 
-            // 1. Role Select
+            // 1. Role Select (首頁)
             if (view === 'role-select') return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-12">
-                    <SoundToggle />
+                    <DjPanel />
                     <div className="text-center">
                         <h1 className="text-6xl md:text-8xl font-black mb-4 title-gold">決戰<br/>國泰金頭腦</h1>
                         <h2 className="text-3xl md:text-5xl font-bold text-white text-shadow-strong">💰 加碼年終送夠夠 💰</h2>
@@ -330,14 +390,14 @@
                 </div>
             );
 
-            // 2. Host
+            // 2. Host (投影優化版)
             if (view === 'host') {
                 const totalPlayers = players.length;
                 const answeredCount = players.filter(p => p.lastQ === gameState.qIndex).length;
                 
                 return (
                 <div className="min-h-screen flex flex-col">
-                    <SoundToggle />
+                    <DjPanel />
                     <div className="p-6 bg-blue-900/80 flex justify-between items-center shadow-lg z-10 border-b-4 border-yellow-400 backdrop-blur-sm">
                         <div className="bg-yellow-400 text-black px-8 py-3 rounded-2xl font-black text-4xl shadow-md border-2 border-white">房間：{roomCode}</div>
                         <div className="text-5xl font-black text-white text-shadow-strong">線上：<span className="text-yellow-400">{totalPlayers}</span> 人</div>
@@ -387,9 +447,9 @@
 
                         {gameState.step === 'leaderboard' && (
                             <div className="w-full max-w-5xl animate-pop">
-                                <h2 className="text-7xl font-black mb-12 title-gold">🏆 戰況排行榜 (Top 5) 🏆</h2>
+                                <h2 className="text-7xl font-black mb-12 title-gold">🏆 戰況排行榜 (Top 6) 🏆</h2>
                                 <div className="space-y-6">
-                                    {players.slice(0, 5).map((p, idx) => (
+                                    {players.slice(0, 6).map((p, idx) => (
                                         <div key={p.id} className={`flex justify-between items-center p-8 rounded-3xl text-5xl font-bold border-4 shadow-xl ${idx === 0 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black border-white scale-110 z-10' : 'bg-white/90 text-blue-900 border-blue-300'}`}>
                                             <div className="flex gap-8 items-center"><span className={`w-20 h-20 flex items-center justify-center rounded-full text-4xl border-2 ${idx===0 ? 'bg-white text-yellow-600 border-yellow-600' : 'bg-blue-100 text-blue-600 border-blue-600'}`}>{idx+1}</span><span>{p.name}</span></div><div className="font-mono text-6xl">{p.score}</div>
                                         </div>
@@ -402,7 +462,7 @@
                             <div className="animate-pop w-full max-w-6xl flex flex-col items-center">
                                 <h1 className="text-8xl font-black title-gold mb-8">🏆 最終榮譽榜 🏆</h1>
                                 
-                                {/* 冠軍 (第1名) */}
+                                {/* 冠軍 */}
                                 <div className="flex justify-center mb-8 w-full">
                                     <div className="bg-gradient-to-b from-yellow-300 to-yellow-600 p-2 rounded-[3rem] shadow-2xl transform scale-110 z-20">
                                         <div className="bg-red-700 rounded-[2.5rem] p-10 text-center border-4 border-yellow-200 min-w-[500px]">
@@ -413,7 +473,7 @@
                                     </div>
                                 </div>
 
-                                {/* 亞軍季軍 (第2, 3名) */}
+                                {/* 亞軍季軍 */}
                                 <div className="flex justify-center gap-12 mb-10 w-full px-8">
                                     {players.slice(1, 3).map((p, idx) => (
                                         <div key={p.id} className={`flex-1 p-8 rounded-3xl text-center border-4 shadow-xl relative top-0 ${idx===0 ? 'bg-gray-200 border-gray-400' : 'bg-orange-200 border-orange-400'}`}>
