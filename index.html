@@ -373,26 +373,50 @@
                 } catch(e) { console.error("Answer failed"); }
             };
 
-            // DJ 面板 (僅 Host)
+            // DJ 面板 (僅 Host) - 可收合
             const DjPanel = () => {
+                const [isOpen, setIsOpen] = useState(false);
                 if (view !== 'host') return null;
+                
                 return (
-                    <div className="fixed top-4 right-4 z-50 flex gap-2 flex-wrap justify-end">
-                        <div className="bg-black/80 backdrop-blur-md p-2 rounded-xl flex gap-1 border border-gray-600 max-w-[400px] flex-wrap justify-center shadow-xl overflow-x-auto no-scrollbar">
-                            {Object.keys(SOUND_PACKS).map(key => (
-                                <button 
-                                    key={key}
-                                    onClick={() => changeTheme(key)}
-                                    className={`px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white bg-gray-700/50'}`}
-                                >
-                                    {SOUND_PACKS[key].name}
-                                </button>
-                            ))}
-                            <button onClick={playCheer} className="px-3 py-2 rounded-lg text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 shadow-md ml-1 whitespace-nowrap">👏 歡呼</button>
+                    <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setIsOpen(!isOpen)} 
+                                className={`p-3 rounded-full shadow-lg border-2 transition w-14 h-14 flex items-center justify-center text-2xl ${isOpen ? 'bg-yellow-400 text-black border-yellow-200' : 'bg-gray-800 text-white border-gray-500 hover:bg-gray-700'}`}
+                                title="DJ 音控台"
+                            >
+                                🎵
+                            </button>
+                            <button 
+                                onClick={toggleMute} 
+                                className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-14 h-14 flex items-center justify-center text-2xl"
+                                title={isMuted ? "取消靜音" : "靜音"}
+                            >
+                                {isMuted ? "🔇" : "🔊"}
+                            </button>
                         </div>
-                        <button onClick={toggleMute} className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-14 h-14 flex items-center justify-center shrink-0">
-                            {isMuted ? "🔇" : "🔊"}
-                        </button>
+
+                        {isOpen && (
+                            <div className="bg-black/90 backdrop-blur-md p-3 rounded-xl border border-gray-500 shadow-2xl flex flex-col gap-2 mt-2 animate-pop origin-top-right w-56">
+                                <div className="text-gray-400 text-xs font-bold text-center mb-1">切換音樂風格</div>
+                                <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto no-scrollbar">
+                                    {Object.keys(SOUND_PACKS).map(key => (
+                                        <button 
+                                            key={key}
+                                            onClick={() => changeTheme(key)}
+                                            className={`px-2 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white bg-gray-700/50'}`}
+                                        >
+                                            {SOUND_PACKS[key].name}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="h-px bg-gray-700 my-1"></div>
+                                <button onClick={playCheer} className="w-full px-3 py-3 rounded-lg text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 shadow-md animate-pulse-fast">
+                                    👏 播放歡呼
+                                </button>
+                            </div>
+                        )}
                     </div>
                 );
             };
