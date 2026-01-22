@@ -52,7 +52,7 @@
             padding: 10px;
         }
 
-        /* DJ 面板隱藏卷軸但可滑動 */
+        /* DJ 面板隱藏卷軸 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -151,9 +151,15 @@
                     } catch (error) { alert("連線錯誤"); }
                 } else { setDb(firebase.firestore()); }
 
-                // 斷線重連
                 const savedRoom = sessionStorage.getItem('host_room_code');
                 if (savedRoom) setRoomCode(savedRoom);
+                
+                // ✅ Magic Link 邏輯：自動帶入網址參數
+                const urlParams = new URLSearchParams(window.location.search);
+                const codeParam = urlParams.get('code');
+                if (codeParam) {
+                    setRoomCode(codeParam);
+                }
             }, []);
 
             // 🎵 切換主題邏輯
@@ -305,12 +311,10 @@
 
             const hostAction = async (action) => {
                 if(!db || isProcessing) return;
-                
                 if (action === 'reveal' && gameState.step === 'reveal') return;
                 if (action === 'start' && gameState.step === 'question') return;
 
                 setIsProcessing(true);
-
                 try {
                     const ref = db.collection('rooms').doc(roomCode);
                     if (action === 'reveal') {
@@ -376,52 +380,38 @@
                 } catch(e) { console.error("Answer failed"); }
             };
 
-            // DJ 面板 (僅 Host, 可收合)
+            // DJ 面板 (僅 Host)
             const DjPanel = () => {
                 const [isOpen, setIsOpen] = useState(false);
                 if (view !== 'host') return null;
-                
                 return (
                     <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
                         <div className="flex gap-2">
-                            <button 
-                                onClick={() => setIsOpen(!isOpen)} 
-                                className={`p-3 rounded-full shadow-lg border-2 transition w-14 h-14 flex items-center justify-center text-2xl ${isOpen ? 'bg-yellow-400 text-black border-yellow-200' : 'bg-gray-800 text-white border-gray-500 hover:bg-gray-700'}`}
-                                title="DJ 音控台"
-                            >
-                                🎵
-                            </button>
-                            <button 
-                                onClick={toggleMute} 
-                                className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-14 h-14 flex items-center justify-center text-2xl"
-                                title={isMuted ? "取消靜音" : "靜音"}
-                            >
-                                {isMuted ? "🔇" : "🔊"}
-                            </button>
+                            <button onClick={() => setIsOpen(!isOpen)} className={`p-3 rounded-full shadow-lg border-2 transition w-14 h-14 flex items-center justify-center text-2xl ${isOpen ? 'bg-yellow-400 text-black border-yellow-200' : 'bg-gray-800 text-white border-gray-500 hover:bg-gray-700'}`}>🎵</button>
+                            <button onClick={toggleMute} className="bg-white text-black p-3 rounded-full shadow-lg border-2 border-gray-300 hover:bg-gray-100 transition w-14 h-14 flex items-center justify-center text-2xl">{isMuted ? "🔇" : "🔊"}</button>
                         </div>
-
                         {isOpen && (
                             <div className="bg-black/90 backdrop-blur-md p-3 rounded-xl border border-gray-500 shadow-2xl flex flex-col gap-2 mt-2 animate-pop origin-top-right w-56 max-h-[400px] overflow-y-auto">
                                 <div className="text-gray-400 text-xs font-bold text-center mb-1">選擇音樂風格</div>
                                 <div className="grid grid-cols-2 gap-2">
                                     {Object.keys(SOUND_PACKS).map(key => (
-                                        <button 
-                                            key={key}
-                                            onClick={() => changeTheme(key)}
-                                            className={`px-2 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white bg-gray-700/50'}`}
-                                        >
-                                            {SOUND_PACKS[key].name}
-                                        </button>
+                                        <button key={key} onClick={() => changeTheme(key)} className={`px-2 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${currentTheme === key ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white bg-gray-700/50'}`}>{SOUND_PACKS[key].name}</button>
                                     ))}
                                 </div>
                                 <div className="h-px bg-gray-700 my-1"></div>
-                                <button onClick={playCheer} className="w-full px-3 py-3 rounded-lg text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 shadow-md animate-pulse-fast">
-                                    👏 播放歡呼
-                                </button>
+                                <button onClick={playCheer} className="w-full px-3 py-3 rounded-lg text-sm font-bold text-white bg-pink-600 hover:bg-pink-500 shadow-md animate-pulse-fast">👏 播放歡呼</button>
                             </div>
                         )}
                     </div>
                 );
+            };
+
+            // ✅ 複製連結功能 (包含 Magic Link)
+            const copyLink = () => {
+                const magicUrl = window.location.href.split('?')[0] + '?code=' + roomCode;
+                navigator.clipboard.writeText(magicUrl).then(() => {
+                    alert("連結已複製！請貼到 LINE 群組:\n" + magicUrl);
+                });
             };
 
             // 1. Role Select
@@ -448,7 +438,9 @@
             if (view === 'host') {
                 const totalPlayers = players.length;
                 const answeredCount = players.filter(p => p.lastQ === gameState.qIndex).length;
-                const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(window.location.href);
+                // ✅ 產生帶參數的 Magic Link QR Code
+                const magicLink = window.location.href.split('?')[0] + '?code=' + roomCode;
+                const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(magicLink);
                 
                 const answerStats = [0, 0, 0, 0];
                 if (gameState.showAnswer) {
@@ -474,6 +466,12 @@
                                 <div className="bg-white p-4 rounded-3xl shadow-2xl mb-8">
                                     <img src={qrUrl} alt="QR Code" className="w-[300px] h-[300px]" />
                                 </div>
+                                
+                                {/* ✅ 新增複製連結按鈕 */}
+                                <button onClick={copyLink} className="mb-8 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-2xl shadow-lg border-2 border-white/50 flex items-center gap-2">
+                                    🔗 複製群組連結 (點我)
+                                </button>
+
                                 <h2 className="text-6xl font-black mb-4 text-white text-shadow-strong">或輸入房間號</h2>
                                 <div className="text-[14rem] font-mono font-black text-yellow-400 leading-none mb-12 text-shadow-strong">{roomCode}</div>
                                 <button onClick={() => hostAction('start')} disabled={isProcessing} className={`bg-green-600 hover:bg-green-500 px-24 py-10 rounded-full text-7xl font-black shadow-2xl btn-push text-white border-8 border-white ${isProcessing ? 'btn-disabled' : ''}`}>開始遊戲 🚀</button>
@@ -505,6 +503,7 @@
                                                     : 'bg-gray-800 border-gray-600 text-gray-500 opacity-50')
                                                 : 'bg-white text-blue-900 border-blue-300'
                                         }`}>
+                                            {/* 📊 長條圖條 (Bar) */}
                                             {gameState.showAnswer && (
                                                 <div 
                                                     className="absolute bottom-0 left-0 h-2 bg-yellow-400/50 bar-grow" 
@@ -513,6 +512,7 @@
                                             )}
                                             <div className="relative z-10 flex justify-between">
                                                 <span>{opt}</span>
+                                                {/* 顯示票數 */}
                                                 {gameState.showAnswer && <span className="text-yellow-300 font-mono ml-4">{answerStats[idx]}人</span>}
                                             </div>
                                         </div>
@@ -538,35 +538,12 @@
                         {gameState.step === 'end' && (
                             <div className="animate-pop w-full max-w-6xl flex flex-col items-center">
                                 <h1 className="text-8xl font-black title-gold mb-8">🏆 最終榮譽榜 🏆</h1>
-                                
-                                <div className="flex justify-center mb-8 w-full">
-                                    <div className="bg-gradient-to-b from-yellow-300 to-yellow-600 p-2 rounded-[3rem] shadow-2xl transform scale-110 z-20">
-                                        <div className="bg-red-700 rounded-[2.5rem] p-10 text-center border-4 border-yellow-200 min-w-[500px]">
-                                            <div className="text-[7rem] mb-4 drop-shadow-lg">👑</div>
-                                            <div className="text-7xl font-black text-white mb-4 text-shadow-strong">{players[0]?.name}</div>
-                                            <div className="text-6xl font-mono text-yellow-200 font-bold">{players[0]?.score}</div>
-                                        </div>
-                                    </div>
-                                </div>
-
+                                <div className="flex justify-center mb-8 w-full"><div className="bg-gradient-to-b from-yellow-300 to-yellow-600 p-2 rounded-[3rem] shadow-2xl transform scale-110 z-20"><div className="bg-red-700 rounded-[2.5rem] p-10 text-center border-4 border-yellow-200 min-w-[500px]"><div className="text-[7rem] mb-4 drop-shadow-lg">👑</div><div className="text-7xl font-black text-white mb-4 text-shadow-strong">{players[0]?.name}</div><div className="text-6xl font-mono text-yellow-200 font-bold">{players[0]?.score}</div></div></div></div>
                                 <div className="flex justify-center gap-12 mb-10 w-full px-8">
-                                    {players.slice(1, 3).map((p, idx) => (
-                                        <div key={p.id} className={`flex-1 p-8 rounded-3xl text-center border-4 shadow-xl relative top-0 ${idx===0 ? 'bg-gray-200 border-gray-400' : 'bg-orange-200 border-orange-400'}`}>
-                                            <div className="text-6xl mb-4">{idx===0 ? '🥈' : '🥉'}</div>
-                                            <div className="text-5xl font-bold text-slate-800 mb-2">{p.name}</div>
-                                            <div className="text-5xl font-mono font-bold text-slate-900">{p.score}</div>
-                                        </div>
-                                    ))}
+                                    {players.slice(1, 3).map((p, idx) => (<div key={p.id} className={`flex-1 p-8 rounded-3xl text-center border-4 shadow-xl relative top-0 ${idx===0 ? 'bg-gray-200 border-gray-400' : 'bg-orange-200 border-orange-400'}`}><div className="text-6xl mb-4">{idx===0 ? '🥈' : '🥉'}</div><div className="text-5xl font-bold text-slate-800 mb-2">{p.name}</div><div className="text-5xl font-mono font-bold text-slate-900">{p.score}</div></div>))}
                                 </div>
-
                                 <div className="grid grid-cols-3 gap-6 w-full px-4">
-                                    {players.slice(3, 6).map((p, idx) => (
-                                        <div key={p.id} className="bg-white/95 p-6 rounded-2xl flex flex-col items-center justify-center border-4 border-blue-400 shadow-md">
-                                            <div className="text-4xl font-bold text-slate-400 mb-2">#{idx+4}</div>
-                                            <div className="text-4xl font-bold text-blue-900 truncate w-full text-center">{p.name}</div>
-                                            <div className="text-3xl font-mono text-blue-600 mt-2">{p.score}</div>
-                                        </div>
-                                    ))}
+                                    {players.slice(3, 6).map((p, idx) => (<div key={p.id} className="bg-white/95 p-6 rounded-2xl flex flex-col items-center justify-center border-4 border-blue-400 shadow-md"><div className="text-4xl font-bold text-slate-400 mb-2">#{idx+4}</div><div className="text-4xl font-bold text-blue-900 truncate w-full text-center">{p.name}</div><div className="text-3xl font-mono text-blue-600 mt-2">{p.score}</div></div>))}
                                 </div>
                             </div>
                         )}
@@ -598,46 +575,17 @@
                     </div>
 
                     <div className="flex-1 flex flex-col justify-center text-center">
-                        {gameState.step === 'lobby' && (
-                            <div className="animate-pulse flex flex-col items-center">
-                                <div className="text-9xl mb-8">⏳</div>
-                                <h2 className="text-6xl font-black mb-4 text-white">連線成功！</h2>
-                                <p className="text-blue-200 text-3xl">請看大螢幕，等待開始...</p>
-                            </div>
-                        )}
-                        
+                        {gameState.step === 'lobby' && <div className="animate-pulse flex flex-col items-center"><div className="text-9xl mb-8">⏳</div><h2 className="text-6xl font-black mb-4 text-white">連線成功！</h2><p className="text-blue-200 text-3xl">請看大螢幕，等待開始...</p></div>}
                         {gameState.step === 'question' && gameState.qIndex !== myPlayer.lastQ && (
                             <div className="grid-btn-container">
                                 {['A', 'B', 'C', 'D'].map((label, idx) => (
-                                    <button key={idx} onClick={() => playerAnswer(idx)} className={`rounded-3xl text-9xl font-black text-white shadow-xl btn-push flex items-center justify-center border-b-[16px] active:border-b-0 active:translate-y-4 transition-all ${['bg-red-600 border-red-900', 'bg-blue-600 border-blue-900', 'bg-yellow-500 border-yellow-800', 'bg-green-600 border-green-900'][idx]}`}>
-                                        {label}
-                                    </button>
+                                    <button key={idx} onClick={() => playerAnswer(idx)} className={`rounded-3xl text-9xl font-black text-white shadow-xl btn-push flex items-center justify-center border-b-[16px] active:border-b-0 active:translate-y-4 transition-all ${['bg-red-600 border-red-900', 'bg-blue-600 border-blue-900', 'bg-yellow-500 border-yellow-800', 'bg-green-600 border-green-900'][idx]}`}>{label}</button>
                                 ))}
                             </div>
                         )}
-
-                        {gameState.step === 'question' && gameState.qIndex === myPlayer.lastQ && (
-                            <div className="animate-pop">
-                                <div className="text-9xl mb-8 animate-bounce">🚀</div>
-                                <h2 className="text-6xl font-black text-green-400 mb-4">答案已送出</h2>
-                                <p className="text-white text-4xl">請看大螢幕結果</p>
-                            </div>
-                        )}
-
-                        {(gameState.step === 'reveal' || gameState.step === 'leaderboard') && (
-                            <div className="bg-white p-10 rounded-3xl shadow-2xl border-8 border-blue-500">
-                                <h2 className="text-6xl font-black mb-6 text-blue-900">本題結束</h2>
-                                <p className="text-gray-600 text-4xl font-bold">正確答案請看大螢幕</p>
-                            </div>
-                        )}
-
-                        {gameState.step === 'end' && (
-                            <div className="animate-pop">
-                                <h2 className="text-6xl font-black mb-8 text-white">最終得分</h2>
-                                <div className="text-[7rem] font-mono font-black text-yellow-400 mb-8">{myPlayer.score}</div>
-                                <div className="text-blue-200 text-4xl">感謝參與！</div>
-                            </div>
-                        )}
+                        {gameState.step === 'question' && gameState.qIndex === myPlayer.lastQ && <div className="animate-pop"><div className="text-9xl mb-8 animate-bounce">🚀</div><h2 className="text-6xl font-black text-green-400 mb-4">答案已送出</h2><p className="text-white text-4xl">請看大螢幕結果</p></div>}
+                        {(gameState.step === 'reveal' || gameState.step === 'leaderboard') && <div className="bg-white p-10 rounded-3xl shadow-2xl border-8 border-blue-500"><h2 className="text-6xl font-black mb-6 text-blue-900">本題結束</h2><p className="text-gray-600 text-4xl font-bold">正確答案請看大螢幕</p></div>}
+                        {gameState.step === 'end' && <div className="animate-pop"><h2 className="text-6xl font-black mb-8 text-white">最終得分</h2><div className="text-[7rem] font-mono font-black text-yellow-400 mb-8">{myPlayer.score}</div><div className="text-blue-200 text-4xl">感謝參與！</div></div>}
                     </div>
                 </div>
                 );
